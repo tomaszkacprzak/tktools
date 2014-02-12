@@ -32,141 +32,146 @@ def get_colorscale(n_colors):
 
     return RGB_tuples
 
+class multi_dim_dist():
+
+    n_contours = 20
+    color_step = 'b'
 
 
-def get_grids(x,y,bins_x,bins_y):
+    def get_grids(self,x,y,bins_x,bins_y):
 
-    if isinstance(bins_x,int):
-        grid_x=np.linspace(x.min(),x.max(),bins_x)
-        n_grid_x = bins_x
-    elif isinstance(bins_x,list):
-        grid_x=bins_x
-        n_grid_x = len(bins_x)
+        if isinstance(bins_x,int):
+            grid_x=np.linspace(x.min(),x.max(),bins_x)
+            n_grid_x = bins_x
+        elif isinstance(bins_x,list):
+            grid_x=bins_x
+            n_grid_x = len(bins_x)
 
-    if isinstance(bins_y,int):
-        grid_y=np.linspace(y.min(),y.max(),bins_y)
-        n_grid_y = bins_y
-    elif isinstance(bins_y,list):
-        grid_y=bins_y
-        n_grid_y = len(bins_y)
+        if isinstance(bins_y,int):
+            grid_y=np.linspace(y.min(),y.max(),bins_y)
+            n_grid_y = bins_y
+        elif isinstance(bins_y,list):
+            grid_y=bins_y
+            n_grid_y = len(bins_y)
 
-    log.debug( 'grid_x' )
-    log.debug( str(grid_x) )
-    log.debug( 'grid_y' )
-    log.debug( str(grid_y) )
+        log.debug( 'grid_x' )
+        log.debug( str(grid_x) )
+        log.debug( 'grid_y' )
+        log.debug( str(grid_y) )
 
-    return grid_x,grid_y,n_grid_x,n_grid_y
+        return grid_x,grid_y,n_grid_x,n_grid_y
 
-def kde_grid(x,y,bins_x,bins_y):
+    def kde_grid(self,x,y,bins_x,bins_y):
 
-    from scipy.stats import kde
+        from scipy.stats import kde
 
-    data = np.concatenate([x[:,None],y[:,None]],axis=1)
-    factor = 0.1
-    k = kde.gaussian_kde(data.T) 
-    k._factor = factor
+        data = np.concatenate([x[:,None],y[:,None]],axis=1)
+        factor = 0.1
+        k = kde.gaussian_kde(data.T) 
+        k._factor = factor
 
-    grid_x,grid_y,n_grid_x,n_grid_y = get_grids(x,y,bins_x,bins_y)    
+        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
 
-    xi, yi = np.meshgrid( grid_x , grid_y )
-    z = k(np.vstack([xi.flatten(), yi.flatten()]))
-    zi = z.reshape(xi.shape)
+        xi, yi = np.meshgrid( grid_x , grid_y )
+        z = k(np.vstack([xi.flatten(), yi.flatten()]))
+        zi = z.reshape(xi.shape)
 
-    return xi,yi,zi
-
-
-def nice_plot(x,y,bins_x,bins_y):
-
-    # pl.hist2d(x,y,bins=[bins_x,bins_y])
-    # pl.imshow(like)
-    
-    # kde = KDE([x,y])
-    # (x_axis,y_axis), like = kde.grid_evaluate(npix, [(min(x),max(x)),(min(y),max(y))] )
-    # pl.imshow(like,extent=(min(x),max(x_axis),min(y_axis),max(y_axis)),interpolation='nearest')
-    # pl.axis('tight')
-
-    xi,yi,zi=kde_grid(x,y,bins_x,bins_y)
-    grid_x,grid_y,n_grid_x,n_grid_y = get_grids(x,y,bins_x,bins_y)    
-
-    n_contours = min([n_grid_y,n_grid_x]) / 3
-    log.debug('n_contours = %d' % n_contours)
-    # pl.pcolormesh(xi, yi, zi)
-    pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
-    pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        return xi,yi,zi
 
 
-def plot_dist(X,bins='def',labels='def'):
+    def nice_plot(self,x,y,bins_x,bins_y):
+
+        # pl.hist2d(x,y,bins=[bins_x,bins_y])
+        # pl.imshow(like)
+        
+        # kde = KDE([x,y])
+        # (x_axis,y_axis), like = kde.grid_evaluate(npix, [(min(x),max(x)),(min(y),max(y))] )
+        # pl.imshow(like,extent=(min(x),max(x_axis),min(y_axis),max(y_axis)),interpolation='nearest')
+        # pl.axis('tight')
+
+        xi,yi,zi=self.kde_grid(x,y,bins_x,bins_y)
+        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
+
+        # n_contours = min([n_grid_y,n_grid_x]) / 3
+        # log.debug('n_contours = %d' % n_contours)
+        n_contours = self.n_contours
+        # pl.pcolormesh(xi, yi, zi)
+        pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
 
 
-    n_dims = len(X)
+    def plot_dist(self,X,bins='def',labels='def'):
 
-    if bins=='def':
-        bins = [50]*n_dims
-        labels = [str(x) for x in range(n_dims)]
-    
-    iall=0
-    for ip in range(n_dims):
 
-        isub = ip*n_dims + ip + 1
-        iall += 1
-        log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
-        ax=pl.subplot(n_dims,n_dims,isub)       
-        pl.hist(X[ip],bins[ip],histtype='step',normed=True,color='b')
-        xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
-        yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
-        print pl.xticks()
-        pl.xticks(xticks) ; pl.yticks(yticks)
-        # panels in the middle
-        # if (( isub % n_dims) != 1) and (isub <= n_dims*(n_dims-1) ):
-        #     pl.yticks=[]
-        #     pl.xticks=[]
-        #     log.info('no xticks')
-        #     log.info('no yticks')
+        n_dims = len(X)
 
-        ax.yaxis.tick_right()
+        if bins=='def':
+            bins = [50]*n_dims
+            labels = [str(x) for x in range(n_dims)]
+        
+        iall=0
+        for ip in range(n_dims):
 
-        adjust_limits(y_offset_min=0,x_offset_max=0,x_offset_min=0)
-
-        if isub==n_dims**2:
-            pl.xlabel(labels[ip])
-
-        for ic in range(ip+1,n_dims):
-            isub = ic*n_dims + ip +1
+            isub = ip*n_dims + ip + 1
             iall += 1
-            log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ic,isub) )
-            pl.subplot(n_dims,n_dims,isub)
-            nice_plot(X[ip],X[ic],bins[ip],bins[ic])
+            log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
+            ax=pl.subplot(n_dims,n_dims,isub)       
+            pl.hist(X[ip],bins[ip],histtype='step',normed=True,color=self.color_step)
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
-            print pl.xticks()
             pl.xticks(xticks) ; pl.yticks(yticks)
+            if iall==1:
+                pl.ylabel('histogram')
+            # panels in the middle
+            # if (( isub % n_dims) != 1) and (isub <= n_dims*(n_dims-1) ):
+            #     pl.yticks=[]
+            #     pl.xticks=[]
+            #     log.info('no xticks')
+            #     log.info('no yticks')
 
-            # if on the left edge
-            if ( isub % n_dims) == 1:
-                pl.ylabel(labels[ic])
-                log.info('ylabel isub %d %s' % (isub,labels[ic]) )
+            ax.yaxis.tick_right()
 
-                # if not on the bottom
-                if (isub <= n_dims*(n_dims-1) ):
-                    pl.xticks([])
-                    log.info('no xticks')
-            else:
-                pl.yticks([])
+            adjust_limits(y_offset_min=0,x_offset_max=0,x_offset_min=0)
 
-            # if on the bottom
-            if (isub > n_dims*(n_dims-1) ):
+            if isub==n_dims**2:
                 pl.xlabel(labels[ip])
-                log.info('xlabel isub %d %s' % (isub,labels[ip]) )
 
-                # if not on the right side
-                if ( isub % n_dims) != 1:
+            for ic in range(ip+1,n_dims):
+                isub = ic*n_dims + ip +1
+                iall += 1
+                log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ic,isub) )
+                pl.subplot(n_dims,n_dims,isub)
+                self.nice_plot(X[ip],X[ic],bins[ip],bins[ic])
+                xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
+                yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
+                pl.xticks(xticks) ; pl.yticks(yticks)
+
+                # if on the left edge
+                if ( isub % n_dims) == 1:
+                    pl.ylabel(labels[ic])
+                    log.info('ylabel isub %d %s' % (isub,labels[ic]) )
+
+                    # if not on the bottom
+                    if (isub <= n_dims*(n_dims-1) ):
+                        pl.xticks([])
+                        log.info('no xticks')
+                else:
                     pl.yticks([])
-                    log.info('no yticks')
-            else:
-                pl.xticks([])
+
+                # if on the bottom
+                if (isub > n_dims*(n_dims-1) ):
+                    pl.xlabel(labels[ip])
+                    log.info('xlabel isub %d %s' % (isub,labels[ip]) )
+
+                    # if not on the right side
+                    if ( isub % n_dims) != 1:
+                        pl.yticks([])
+                        log.info('no yticks')
+                else:
+                    pl.xticks([])
 
 
 
 
-        
+            
 
