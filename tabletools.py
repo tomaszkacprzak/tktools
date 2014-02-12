@@ -4,12 +4,16 @@ import sys
 
 loaded_tables = {}
 
+# logging.basicConfig(level=logging.INFO,format='%(asctime)s %(name)s %(levelname)s',datefmt="%Y-%m-%d %H:%M:%S")
+# default_log = logging.getLogger("tabletools") 
+
 default_log = logging.getLogger("tabletools") 
 default_log.setLevel(logging.INFO)  
 log_formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s   %(message)s ","%Y-%m-%d %H:%M:%S")
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
+default_log.propagate = False
 
 def set_log(log):
 
