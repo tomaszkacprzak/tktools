@@ -96,8 +96,11 @@ class multi_dim_dist():
         # log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
         # pl.pcolormesh(xi, yi, zi)
-        pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
         pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        # pl.clabel(cp, inline=1, fontsize=8, colors='k')
+        # pl.colorbar()
+
 
 
     def plot_dist(self,X,bins='def',labels='def'):
