@@ -10,6 +10,16 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 log = default_log
 
+def get_bins_centers(bins_hist):
+
+    dx = bins_hist[1] - bins_hist[0]
+    # print len(bins_hist)
+    new_bins_hist = bins_hist[:-1] + dx/2.
+    # print len(new_bins_hist)
+    return new_bins_hist
+
+
+
 def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_max=0.1):
 
     pl.axis('tight')
