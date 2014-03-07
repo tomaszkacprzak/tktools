@@ -10,14 +10,27 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 log = default_log
 
-def get_bins_centers(bins_hist):
+def get_bins_centers(bins_edges):
 
-    dx = bins_hist[1] - bins_hist[0]
-    # print len(bins_hist)
-    new_bins_hist = bins_hist[:-1] + dx/2.
+    # ensure np array
+    bins_edges=np.array(bins_edges)
+
+    # get distance
+    dx = bins_edges[1] - bins_edges[0]
+    # print len(bins_edges)
+    bins_centers = bins_edges[:-1] + dx/2.
+    # print len(bins_centers)
+    return bins_centers
+
+def get_bins_edges(bins_centers):
+
+    dx = bins_centers[1] - bins_centers[0]
+    # print len(bins_centers)
+    bins_edges = bins_centers.copy() - dx/2.
+    last = bins_edges[-1]
+    bins_edges = np.append(bins_edges , last+dx)
     # print len(new_bins_hist)
-    return new_bins_hist
-
+    return bins_edges
 
 
 def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_max=0.1):
@@ -89,7 +102,9 @@ class multi_dim_dist():
         return xi,yi,zi
 
 
-    def nice_plot(self,x,y,bins_x,bins_y):
+    def kde_plot(self,x,y,bins_x,bins_y):
+
+        import pdb; pdb.set_trace()
 
         # pl.hist2d(x,y,bins=[bins_x,bins_y])
         # pl.imshow(like)
@@ -116,7 +131,7 @@ class multi_dim_dist():
     def plot_dist(self,X,bins='def',labels='def'):
 
 
-        n_dims = len(X)
+        n_points, n_dims = X.shape
 
         if bins=='def':
             bins = [50]*n_dims
@@ -129,7 +144,7 @@ class multi_dim_dist():
             iall += 1
             log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
             ax=pl.subplot(n_dims,n_dims,isub)       
-            pl.hist(X[ip],bins[ip],histtype='step',normed=True,color=self.color_step)
+            pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
             pl.xticks(xticks) ; pl.yticks(yticks)
@@ -154,7 +169,7 @@ class multi_dim_dist():
                 iall += 1
                 log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ic,isub) )
                 pl.subplot(n_dims,n_dims,isub)
-                self.nice_plot(X[ip],X[ic],bins[ip],bins[ic])
+                self.kde_plot(X[:,ip],X[:,ic],bins[ip],bins[ic])
                 xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
                 yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
                 pl.xticks(xticks) ; pl.yticks(yticks)
@@ -182,6 +197,26 @@ class multi_dim_dist():
                         log.info('no yticks')
                 else:
                     pl.xticks([])
+
+def plot_dist(X,bins='def',labels='def'):
+
+
+    mdd = multi_dim_dist()
+    mdd.plot_dist(X,bins,labels)
+
+
+if __name__ == '__main__':
+
+    bins_fwhm_centers = np.arange(0.7,1.7,0.1)
+    bins_fwhm_edges = get_bins_edges(bins_fwhm_centers)
+    bins_fwhm_centers2 = get_bins_centers(bins_fwhm_edges)
+
+    print 'bins_fwhm_centers'
+    print bins_fwhm_centers
+    print 'bins_fwhm_edges'
+    print bins_fwhm_edges
+    print 'bins_fwhm_centers2'
+    print bins_fwhm_centers2
 
 
 
