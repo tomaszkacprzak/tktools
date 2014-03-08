@@ -55,6 +55,59 @@ def get_colorscale(n_colors):
 
     return RGB_tuples
 
+def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+  
+    N = len(x)
+    x_axis = np.linspace(xmin, xmax, n+1)
+    y_axis = np.linspace(ymin, ymax, n+1)
+    histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
+
+    def objective(limit, target):
+            w = np.where(like>limit)
+            count = histogram[w]
+            return count.sum() - target
+    target1 = N*(1-contour1)
+    target2 = N*(1-contour2)
+    level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
+    level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+    return level1, level2, like.sum()
+
+def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
+
+    import scipy
+
+    # normalise
+    pdf_norm = sum(pdf.flatten())
+    pdf = pdf/pdf_norm
+
+    max_pdf = max(pdf.flatten())
+    min_pdf = 0.
+
+    n_grid_prob = 2000
+    grid_prob = np.linspace(min_pdf,max_pdf,n_grid_prob)
+
+    list_levels = [] 
+    conf_tol = 0.001
+    diff = np.zeros(len(grid_prob))
+    for sig in list_sigmas:
+
+        confidence_level = scipy.special.erf( float(sig) / np.sqrt(2.) )
+
+        log.debug('confindence %d sigmas %5.5f', sig, confidence_level)
+        for il, lvl in enumerate(grid_prob):
+            mass = sum(pdf[pdf > lvl]) 
+            diff[il] = np.abs(confidence_level - mass) 
+            # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
+        
+        ib = diff.argmin()
+        vb = diff[ib]
+        list_levels.append(vb)
+        
+        log.debug('confindence %5.5f level %5.5f/%5.5f at %5.2f', confidence_level, vb,max_pdf, float(ib)/float(n_grid_prob))
+
+    print list_levels
+    return list_levels , list_sigmas
+
 class multi_dim_dist():
 
     n_contours = 20
@@ -99,12 +152,13 @@ class multi_dim_dist():
         z = k(np.vstack([xi.flatten(), yi.flatten()]))
         zi = z.reshape(xi.shape)
 
+        # normalise
+        zi /= sum(zi.flatten())
+
         return xi,yi,zi
 
 
     def kde_plot(self,x,y,bins_x,bins_y):
-
-        import pdb; pdb.set_trace()
 
         # pl.hist2d(x,y,bins=[bins_x,bins_y])
         # pl.imshow(like)
@@ -117,15 +171,24 @@ class multi_dim_dist():
         xi,yi,zi=self.kde_grid(x,y,bins_x,bins_y)
         grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
 
-        # n_contours = min([n_grid_y,n_grid_x]) / 3
-        # log.debug('n_contours = %d' % n_contours)
+        n_contours = min([n_grid_y,n_grid_x]) / 3
+        log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
-        # pl.pcolormesh(xi, yi, zi)
-        cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
-        pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        pl.pcolormesh(xi, yi, zi)
+        # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        contour_levels , contour_sigmas = get_sigma_contours_levels(zi)
+        cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
+
+
+        # cp = pl.contour(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
+        # pl.contourf(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
+
+        # n_contours = 5
+        # # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.jet)
+        # # pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.jet)
+        # pl.colorbar()
         # pl.clabel(cp, inline=1, fontsize=8, colors='k')
         # pl.colorbar()
-
 
 
     def plot_dist(self,X,bins='def',labels='def'):
@@ -134,7 +197,7 @@ class multi_dim_dist():
         n_points, n_dims = X.shape
 
         if bins=='def':
-            bins = [50]*n_dims
+            bins = [100]*n_dims
             labels = [str(x) for x in range(n_dims)]
         
         iall=0
