@@ -10,14 +10,27 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 log = default_log
 
-def get_bins_centers(bins_hist):
+def get_bins_centers(bins_edges):
 
-    dx = bins_hist[1] - bins_hist[0]
-    # print len(bins_hist)
-    new_bins_hist = bins_hist[:-1] + dx/2.
+    # ensure np array
+    bins_edges=np.array(bins_edges)
+
+    # get distance
+    dx = bins_edges[1] - bins_edges[0]
+    # print len(bins_edges)
+    bins_centers = bins_edges[:-1] + dx/2.
+    # print len(bins_centers)
+    return bins_centers
+
+def get_bins_edges(bins_centers):
+
+    dx = bins_centers[1] - bins_centers[0]
+    # print len(bins_centers)
+    bins_edges = bins_centers.copy() - dx/2.
+    last = bins_edges[-1]
+    bins_edges = np.append(bins_edges , last+dx)
     # print len(new_bins_hist)
-    return new_bins_hist
-
+    return bins_edges
 
 
 def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_max=0.1):
@@ -41,6 +54,59 @@ def get_colorscale(n_colors):
     RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 
     return RGB_tuples
+
+def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
+  
+    N = len(x)
+    x_axis = np.linspace(xmin, xmax, n+1)
+    y_axis = np.linspace(ymin, ymax, n+1)
+    histogram, _, _ = np.histogram2d(x, y, bins=[x_axis, y_axis])
+
+    def objective(limit, target):
+            w = np.where(like>limit)
+            count = histogram[w]
+            return count.sum() - target
+    target1 = N*(1-contour1)
+    target2 = N*(1-contour2)
+    level1 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target1,), xtol=1./N)
+    level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
+    return level1, level2, like.sum()
+
+def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
+
+    import scipy
+
+    # normalise
+    pdf_norm = sum(pdf.flatten())
+    pdf = pdf/pdf_norm
+
+    max_pdf = max(pdf.flatten())
+    min_pdf = 0.
+
+    n_grid_prob = 2000
+    grid_prob = np.linspace(min_pdf,max_pdf,n_grid_prob)
+
+    list_levels = [] 
+    conf_tol = 0.001
+    diff = np.zeros(len(grid_prob))
+    for sig in list_sigmas:
+
+        confidence_level = scipy.special.erf( float(sig) / np.sqrt(2.) )
+
+        log.debug('confindence %d sigmas %5.5f', sig, confidence_level)
+        for il, lvl in enumerate(grid_prob):
+            mass = sum(pdf[pdf > lvl]) 
+            diff[il] = np.abs(confidence_level - mass) 
+            # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
+        
+        ib = diff.argmin()
+        vb = diff[ib]
+        list_levels.append(vb)
+        
+        log.debug('confindence %5.5f level %5.5f/%5.5f at %5.2f', confidence_level, vb,max_pdf, float(ib)/float(n_grid_prob))
+
+    print list_levels
+    return list_levels , list_sigmas
 
 class multi_dim_dist():
 
@@ -86,10 +152,13 @@ class multi_dim_dist():
         z = k(np.vstack([xi.flatten(), yi.flatten()]))
         zi = z.reshape(xi.shape)
 
+        # normalise
+        zi /= sum(zi.flatten())
+
         return xi,yi,zi
 
 
-    def nice_plot(self,x,y,bins_x,bins_y):
+    def kde_plot(self,x,y,bins_x,bins_y):
 
         # pl.hist2d(x,y,bins=[bins_x,bins_y])
         # pl.imshow(like)
@@ -102,21 +171,33 @@ class multi_dim_dist():
         xi,yi,zi=self.kde_grid(x,y,bins_x,bins_y)
         grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
 
-        # n_contours = min([n_grid_y,n_grid_x]) / 3
-        # log.debug('n_contours = %d' % n_contours)
+        n_contours = min([n_grid_y,n_grid_x]) / 3
+        log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
-        # pl.pcolormesh(xi, yi, zi)
-        pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
-        pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        pl.pcolormesh(xi, yi, zi)
+        # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+        contour_levels , contour_sigmas = get_sigma_contours_levels(zi)
+        cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
+
+
+        # cp = pl.contour(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
+        # pl.contourf(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
+
+        # n_contours = 5
+        # # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.jet)
+        # # pl.contourf(xi, yi, zi,n_contours,cmap=pl.cm.jet)
+        # pl.colorbar()
+        # pl.clabel(cp, inline=1, fontsize=8, colors='k')
+        # pl.colorbar()
 
 
     def plot_dist(self,X,bins='def',labels='def'):
 
 
-        n_dims = len(X)
+        n_points, n_dims = X.shape
 
         if bins=='def':
-            bins = [50]*n_dims
+            bins = [100]*n_dims
             labels = [str(x) for x in range(n_dims)]
         
         iall=0
@@ -126,7 +207,7 @@ class multi_dim_dist():
             iall += 1
             log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
             ax=pl.subplot(n_dims,n_dims,isub)       
-            pl.hist(X[ip],bins[ip],histtype='step',normed=True,color=self.color_step)
+            pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
             pl.xticks(xticks) ; pl.yticks(yticks)
@@ -151,7 +232,7 @@ class multi_dim_dist():
                 iall += 1
                 log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ic,isub) )
                 pl.subplot(n_dims,n_dims,isub)
-                self.nice_plot(X[ip],X[ic],bins[ip],bins[ic])
+                self.kde_plot(X[:,ip],X[:,ic],bins[ip],bins[ic])
                 xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
                 yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
                 pl.xticks(xticks) ; pl.yticks(yticks)
@@ -179,6 +260,26 @@ class multi_dim_dist():
                         log.info('no yticks')
                 else:
                     pl.xticks([])
+
+def plot_dist(X,bins='def',labels='def'):
+
+
+    mdd = multi_dim_dist()
+    mdd.plot_dist(X,bins,labels)
+
+
+if __name__ == '__main__':
+
+    bins_fwhm_centers = np.arange(0.7,1.7,0.1)
+    bins_fwhm_edges = get_bins_edges(bins_fwhm_centers)
+    bins_fwhm_centers2 = get_bins_centers(bins_fwhm_edges)
+
+    print 'bins_fwhm_centers'
+    print bins_fwhm_centers
+    print 'bins_fwhm_edges'
+    print bins_fwhm_edges
+    print 'bins_fwhm_centers2'
+    print bins_fwhm_centers2
 
 
 

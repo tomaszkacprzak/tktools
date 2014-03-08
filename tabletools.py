@@ -102,7 +102,7 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
 
     return table
 
-def saveTable(filepath,table,log=default_log,append=False):
+def saveTable(filepath,table,log=default_log,append=False,,dtype=None):
 
     log = setLog(log)
 
@@ -114,6 +114,9 @@ def saveTable(filepath,table,log=default_log,append=False):
                 numpy.dtype('>i8') : '% 12d',
                 numpy.dtype('>f8') : '% .10f',
                 numpy.dtype('S1024') : '%s',}
+
+    if dtype!=None:
+        table = array2recarray(table,dtype=dtype)
 
     if filepath.split('.')[-1] == 'pp':
 
@@ -132,7 +135,6 @@ def saveTable(filepath,table,log=default_log,append=False):
         
         import pyfits
         if append:
-            # if type(table) == numpy.ndarray:
             pyfits.append(filepath,table)
         else:
             if type(table) is pyfits.core.HDUList:
