@@ -15,7 +15,7 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 default_log.propagate = False
 
-def set_log(log):
+def setLog(log):
 
     logging_levels_int = { 0: logging.CRITICAL, 
                            1: logging.WARNING,
@@ -50,7 +50,7 @@ def toMatrix(x):
 
 def addTable(table_name,table,log=default_log):
 
-    log = set_log(log)
+    log = setLog(log)
     
     if not isinstance(table_name,str):
         raise Exception('table_name should be a type string and is %s' % str(type(table_name)))
@@ -63,7 +63,7 @@ def addTable(table_name,table,log=default_log):
 
 def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_log):
 
-    log = set_log(log)
+    log = setLog(log)
 
     if (table_name in loaded_tables) and (table_name !='do_not_store'):
 
@@ -102,9 +102,9 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
 
     return table
 
-def saveTable(filepath,table,log=default_log):
+def saveTable(filepath,table,log=default_log,append=False):
 
-    log = set_log(log)
+    log = setLog(log)
 
     import numpy
     formats = { numpy.dtype('int64') : '% 12d' ,
@@ -116,18 +116,38 @@ def saveTable(filepath,table,log=default_log):
                 numpy.dtype('S1024') : '%s',}
 
     if filepath.split('.')[-1] == 'pp':
+
+        if append == True:
+            log.error('appending a pickle not supported yet')
+            raise Exception('appending a pickle not supported yet');
+
         import cPickle as pickle
         file_pickle = open(filepath,'w')
         pickle.dump(table,file_pickle,protocol=2)
         file_pickle.close()
+
+
+
     elif filepath.split('.')[-1] == 'fits' or filepath.split('.')[-2] == 'fits':
+        
         import pyfits
-        if type(table) is pyfits.core.HDUList:
-            table.writeto(filepath,clobber=True)
+        if append:
+            # if type(table) == numpy.ndarray:
+            pyfits.append(filepath,table)
+            print 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA append' , pyfits.open(filepath) , type(table)
         else:
-            fits = getFITSTable(table)
-            fits.writeto(filepath,clobber=True)                      
+            if type(table) is pyfits.core.HDUList:
+                fits_obj_to_write = table
+            else:
+                fits_obj_to_write = getFITSTable(table)
+            fits_obj_to_write.writeto(filepath,clobber=True)
+
     else:
+
+        if append:
+            log.error('appending a pickle not supported yet')
+            raise Exception('appending a pickle not supported yet');
+
         header = '# ' + ' '.join(table.dtype.names)
         fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
         float(numpy.__version__[0:3])
@@ -140,8 +160,12 @@ def saveTable(filepath,table,log=default_log):
                 modified.write(header + '\n' + data)
                 modified.close()
             
+    if append:
+        log.info('appended table %s, %d rows' % (filepath,len(table)))
+        # log.info('appended table %s, %d rows, new number of HDUs %d' % (filepath,len(table),n_hdus))
+    else:
+        log.info('saved table %s, %d rows' % (filepath,len(table)))
 
-    log.info('table saved %s correctly, got %d rows' % (filepath,len(table)))
 
 def getBinaryTable(numpy_array):
 
