@@ -102,7 +102,7 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
 
     return table
 
-def saveTable(filepath,table,log=default_log,append=False,,dtype=None):
+def saveTable(filepath,table,log=default_log,append=False,dtype=None):
 
     log = setLog(log)
 
