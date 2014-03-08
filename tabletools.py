@@ -134,7 +134,6 @@ def saveTable(filepath,table,log=default_log,append=False):
         if append:
             # if type(table) == numpy.ndarray:
             pyfits.append(filepath,table)
-            print 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA append' , pyfits.open(filepath) , type(table)
         else:
             if type(table) is pyfits.core.HDUList:
                 fits_obj_to_write = table
