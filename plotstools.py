@@ -75,6 +75,7 @@ def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, cont
 def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
 
     import scipy
+    import scipy.special
 
     # normalise
     pdf_norm = sum(pdf.flatten())
@@ -100,12 +101,11 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
             # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
         
         ib = diff.argmin()
-        vb = diff[ib]
+        vb = grid_prob[ib]
         list_levels.append(vb)
         
         log.debug('confindence %5.5f level %5.5f/%5.5f at %5.2f', confidence_level, vb,max_pdf, float(ib)/float(n_grid_prob))
 
-    print list_levels
     return list_levels , list_sigmas
 
 class multi_dim_dist():
@@ -142,9 +142,7 @@ class multi_dim_dist():
         from scipy.stats import kde
 
         data = np.concatenate([x[:,None],y[:,None]],axis=1)
-        factor = 0.1
-        k = kde.gaussian_kde(data.T) 
-        k._factor = factor
+        k = kde.gaussian_kde(data.T,bw_method='silverman') 
 
         grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
 
