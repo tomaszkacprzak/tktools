@@ -1,5 +1,6 @@
-import logging, sys
-import pylab as pl
+import logging, sys, mathstools
+# import pylab as pl
+import matplotlib.pyplot as pl
 import numpy as np
 
 default_log = logging.getLogger("plotstools") 
@@ -9,6 +10,31 @@ stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 log = default_log
+
+def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
+    """
+    @brief Create an image from values on a grid.
+    @param values_c values of the image, will be turned into intensity of image. 
+                    It has to be in a Nx1 vector, where N=nx*ny, 
+                    where nx and ny are number of grid points in x and y direction.
+    @param grid_x - grid of points
+    """
+
+    if nx==None:
+        nx = len(grid_x)
+    if ny==None:
+        ny = len(grid_y)
+    if (len(grid_x) == len(values_c)) and nx==None :
+        raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
+    if (len(grid_y) == len(values_c)) and ny==None :
+        raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
+    values_c = np.reshape(values_c,[nx,ny],order='F')
+    pl.imshow( values_c , extent=[min(grid_x)  , max(grid_x) , min(grid_y), max(grid_y)], origin='low' , aspect='auto')
+    pl.xlim([min(grid_x)  , max(grid_x)])
+    pl.ylim([min(grid_y)  , max(grid_y)])
+
+
+
 
 def get_bins_centers(bins_edges):
 
@@ -36,7 +62,7 @@ def get_bins_edges(bins_centers):
 def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_max=0.1):
 
     pl.axis('tight')
-    
+
     xlim = pl.xlim()
     add_xlim_min = x_offset_min*np.abs(max(xlim) - min(xlim))
     add_xlim_max = x_offset_max*np.abs(max(xlim) - min(xlim))
@@ -72,41 +98,7 @@ def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, cont
     level2 = scipy.optimize.bisect(objective, like.min(), like.max(), args=(target2,), xtol=1./N)
     return level1, level2, like.sum()
 
-def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
 
-    import scipy
-    import scipy.special
-
-    # normalise
-    pdf_norm = sum(pdf.flatten())
-    pdf = pdf/pdf_norm
-
-    max_pdf = max(pdf.flatten())
-    min_pdf = 0.
-
-    n_grid_prob = 2000
-    grid_prob = np.linspace(min_pdf,max_pdf,n_grid_prob)
-
-    list_levels = [] 
-    conf_tol = 0.001
-    diff = np.zeros(len(grid_prob))
-    for sig in list_sigmas:
-
-        confidence_level = scipy.special.erf( float(sig) / np.sqrt(2.) )
-
-        log.debug('confindence %d sigmas %5.5f', sig, confidence_level)
-        for il, lvl in enumerate(grid_prob):
-            mass = sum(pdf[pdf > lvl]) 
-            diff[il] = np.abs(confidence_level - mass) 
-            # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
-        
-        ib = diff.argmin()
-        vb = grid_prob[ib]
-        list_levels.append(vb)
-        
-        log.debug('confindence %5.5f level %5.5f/%5.5f at %5.2f', confidence_level, vb,max_pdf, float(ib)/float(n_grid_prob))
-
-    return list_levels , list_sigmas
 
 class multi_dim_dist():
 
@@ -174,7 +166,7 @@ class multi_dim_dist():
         n_contours = self.n_contours
         pl.pcolormesh(xi, yi, zi)
         # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
-        contour_levels , contour_sigmas = get_sigma_contours_levels(zi)
+        contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
         cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
 
 
@@ -204,7 +196,7 @@ class multi_dim_dist():
             isub = ip*n_dims + ip + 1
             iall += 1
             log.info( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
-            ax=pl.subplot(n_dims,n_dims,isub)       
+            pl.subplot(n_dims,n_dims,isub)       
             pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
@@ -218,7 +210,7 @@ class multi_dim_dist():
             #     log.info('no xticks')
             #     log.info('no yticks')
 
-            ax.yaxis.tick_right()
+            pl.yaxis.tick_right()
 
             adjust_limits(y_offset_min=0,x_offset_max=0,x_offset_min=0)
 
