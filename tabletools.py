@@ -81,8 +81,9 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
 
         elif filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
                 import pyfits
-                fits = pyfits.open(filepath)
-                table = fits[hdu].data
+                # fits = pyfits.open(filepath)
+                table = pyfits.getdata(filepath,hdu)
+                # table = fits[hdu].data
                 import numpy
                 table = numpy.asarray(table)
 
