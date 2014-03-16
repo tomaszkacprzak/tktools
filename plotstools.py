@@ -20,16 +20,42 @@ def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
     @param grid_x - grid of points
     """
 
-    if nx==None:
-        nx = len(grid_x)
-    if ny==None:
-        ny = len(grid_y)
-    if (len(grid_x) == len(values_c)) and nx==None :
-        raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
-    if (len(grid_y) == len(values_c)) and ny==None :
-        raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
-    values_c = np.reshape(values_c,[nx,ny],order='F')
-    pl.imshow( values_c , extent=[min(grid_x)  , max(grid_x) , min(grid_y), max(grid_y)], origin='low' , aspect='auto')
+
+    if nx==None :
+        if len(grid_x) == len(values_c):
+            nx = len(np.unique(grid_x))
+            raise Exception('this is broken')
+        else:
+            nx = len(grid_x)
+
+    if ny==None :
+        if len(grid_y) == len(values_c):
+            ny = len(np.unique(grid_y))
+        else:
+            ny = len(grid_y)
+
+    if len(grid_x) == len(values_c):
+        values_c_reshaped = np.reshape(values_c,[ny,nx],order='F')
+    else:
+        values_c_reshaped = np.reshape(values_c,[nx,ny],order='F')
+
+    # print nx , ny , nx*ny , len(values_c)
+
+    if nx*ny != len(values_c):
+        raise ValueError('length of values_c %d , calculated grid size %d ,  same as length of grid_x and grid_y. ' , len(grid_c) , len(nx*ny) )
+
+
+
+    #     # raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
+
+    # if (len(grid_y) == len(values_c)) and ny==None :
+    #     ny = len(np.unique(grid_y))
+    #     # raise ValueError('length of values_c %d , same as length of grid_x and grid_y. Supply the size of original grid before meshing by using nx and ny arguments.' % len(grid_x))
+    # if nx==None:
+    # if ny==None:
+    #     ny = len(grid_y)
+
+    pl.imshow( values_c_reshaped , extent=[min(grid_x)  , max(grid_x) , min(grid_y), max(grid_y)], origin='low' , aspect='auto')
     pl.xlim([min(grid_x)  , max(grid_x)])
     pl.ylim([min(grid_y)  , max(grid_y)])
 

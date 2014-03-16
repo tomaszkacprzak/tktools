@@ -61,7 +61,7 @@ def addTable(table_name,table,log=default_log):
         loaded_tables[table_name] = table
 
 
-def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_log):
+def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default_log):
 
     log = setLog(log)
 
@@ -80,9 +80,10 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
                 file_pickle.close()
 
         elif filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
-                import pyfits
+                import fitsio
                 # fits = pyfits.open(filepath)
-                table = pyfits.getdata(filepath,hdu)
+                # table = pyfits.getdata(filepath,hdu)
+                fitsio.read(filepath,ext=hdu)
                 # table = fits[hdu].data
                 import numpy
                 table = numpy.asarray(table)
@@ -102,6 +103,35 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=1,log=default_lo
     if ( table_name != 'do_not_store' ): loaded_tables[table_name] = table
 
     return table
+
+def savePickle(filepath,obj,append=False,log=default_log):
+
+    log = setLog(log)
+
+    import cPickle as pickle
+    file_pickle = open(filepath,'wb')
+    pickle.dump(obj,file_pickle,protocol=2)
+    file_pickle.close()
+    if append:
+        log.info('appended pickle %s' , filepath)
+    else:
+        log.info('pickled %s' , filepath)
+
+def loadPickle(filepath,log=default_log):
+
+    log = setLog(log)
+
+    import cPickle as pickle
+    file_pickle = open(filepath,'rb')
+    objs = []
+    while 1:
+        try:
+            objs.append(pickle.load(file_pickle))
+        except EOFError:
+            break
+    file_pickle.close()
+
+    return objs
 
 def saveTable(filepath,table,log=default_log,append=False,dtype=None):
 
