@@ -109,7 +109,7 @@ def savePickle(filepath,obj,append=False,log=default_log):
     log = setLog(log)
 
     import cPickle as pickle
-    file_pickle = open(filepath,'wb')
+    file_pickle = open(filepath,'a')
     pickle.dump(obj,file_pickle,protocol=2)
     file_pickle.close()
     if append:
@@ -132,6 +132,17 @@ def loadPickle(filepath,log=default_log):
     file_pickle.close()
 
     return objs
+
+def writeHeader(filepath,dtype,log=default_log):
+
+    log = setLog(log)
+
+    f = open(filepath,'w')
+    header = '# ' + ' '.join(dtype['names'])
+    f.write(header)
+    f.close()
+    log.info('saved header in file %s' % filepath)
+
 
 def saveTable(filepath,table,log=default_log,append=False,dtype=None):
 
@@ -177,27 +188,28 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
     else:
 
         if append:
-            log.error('appending a pickle not supported yet')
-            raise Exception('appending a pickle not supported yet');
-
-        header = '# ' + ' '.join(table.dtype.names)
-        fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
-        float(numpy.__version__[0:3])
-        if float(numpy.__version__[0:3]) >= 1.7:
-            numpy.savetxt(filepath,table,header=header,fmt=fmt,delimiter='\t')
+            file_table = open(filepath,'a')
+            fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
+            for line in table:
+                linestr = '\t'.join(fmt) % line.tolist() + '\n'
+                file_table.write(linestr)
+            file_table.close()           
+            log.info('appended table %s %d rows' % (filepath,len(table)))
         else:
-            numpy.savetxt(filepath,table,fmt=fmt,delimiter='\t')
-            with file(filepath, 'r') as original: data = original.read()
-            with file(filepath, 'w') as modified: 
-                modified.write(header + '\n' + data)
-                modified.close()
-            
-    if append:
-        log.info('appended table %s, %d rows' % (filepath,len(table)))
-        # log.info('appended table %s, %d rows, new number of HDUs %d' % (filepath,len(table),n_hdus))
-    else:
-        log.info('saved table %s, %d rows' % (filepath,len(table)))
 
+            header = '# ' + ' '.join(table.dtype.names)
+            fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
+            float(numpy.__version__[0:3])
+            if float(numpy.__version__[0:3]) >= 1.7:
+                numpy.savetxt(filepath,table,header=header,fmt=fmt,delimiter='\t')
+            else:
+                numpy.savetxt(filepath,table,fmt=fmt,delimiter='\t')
+                with file(filepath, 'r') as original: data = original.read()
+                with file(filepath, 'w') as modified: 
+                    modified.write(header + '\n' + data)
+                    modified.close()
+            log.info('saved table %s %d rows' % (filepath,len(table)))
+            
 
 def getBinaryTable(numpy_array):
 
