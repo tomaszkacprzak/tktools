@@ -83,7 +83,7 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default
                 import fitsio
                 # fits = pyfits.open(filepath)
                 # table = pyfits.getdata(filepath,hdu)
-                fitsio.read(filepath,ext=hdu)
+                table = fitsio.read(filepath,ext=hdu)
                 # table = fits[hdu].data
                 import numpy
                 table = numpy.asarray(table)
