@@ -109,7 +109,10 @@ def savePickle(filepath,obj,append=False,log=default_log):
     log = setLog(log)
 
     import cPickle as pickle
-    file_pickle = open(filepath,'a')
+    if append==True:
+        file_pickle = open(filepath,'a')
+    else:
+        file_pickle = open(filepath,'w')
     pickle.dump(obj,file_pickle,protocol=2)
     file_pickle.close()
     if append:
@@ -130,6 +133,9 @@ def loadPickle(filepath,log=default_log):
         except EOFError:
             break
     file_pickle.close()
+
+    if len(objs) == 1:
+        objs=objs[0]
 
     return objs
 
