@@ -184,12 +184,14 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
         import pyfits
         if append:
             pyfits.append(filepath,table)
+            log.info('appended table %s %d rows' % (filepath,len(table)))
         else:
             if type(table) is pyfits.core.HDUList:
                 fits_obj_to_write = table
             else:
                 fits_obj_to_write = getFITSTable(table)
             fits_obj_to_write.writeto(filepath,clobber=True)
+            log.info('saved table %s %d rows' % (filepath,len(table)))
 
     else:
 
