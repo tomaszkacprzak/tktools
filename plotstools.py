@@ -24,7 +24,7 @@ def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
     if nx==None :
         if len(grid_x) == len(values_c):
             nx = len(np.unique(grid_x))
-            raise Exception('this is broken')
+            # raise Exception('this is broken')
         else:
             nx = len(grid_x)
 

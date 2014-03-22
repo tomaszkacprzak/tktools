@@ -61,7 +61,7 @@ def addTable(table_name,table,log=default_log):
         loaded_tables[table_name] = table
 
 
-def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default_log):
+def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default_log,skiprows=0):
 
     log = setLog(log)
 
@@ -95,7 +95,7 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default
                     table = numpy.asarray(table)
         else:
                 import numpy
-                table = numpy.loadtxt(filepath,dtype=dtype)
+                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
         
     
     log.info('loaded %s correctly, got %d rows' % (filepath,len(table)))
