@@ -144,7 +144,7 @@ def writeHeader(filepath,dtype,log=default_log):
     log = setLog(log)
 
     f = open(filepath,'w')
-    header = '# ' + ' '.join(dtype['names'])
+    header = '# ' + ' '.join(dtype['names']) + '\n'
     f.write(header)
     f.close()
     log.info('saved header in file %s' % filepath)
