@@ -166,7 +166,8 @@ class multi_dim_dist():
         from scipy.stats import kde
 
         data = np.concatenate([x[:,None],y[:,None]],axis=1)
-        k = kde.gaussian_kde(data.T,bw_method='silverman') 
+        # k = kde.gaussian_kde(data.T,bw_method='silverman') 
+        k = kde.gaussian_kde(data.T) 
 
         grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
 
@@ -196,10 +197,11 @@ class multi_dim_dist():
         n_contours = min([n_grid_y,n_grid_x]) / 3
         log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
-        pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
+        # pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
         # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
         contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
-        cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
+        # cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
+        cp = pl.contourf(xi, yi, zi,levels=contour_levels, cmap=pl.cm.Blues)
 
 
         # cp = pl.contour(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
