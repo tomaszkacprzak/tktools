@@ -100,13 +100,18 @@ def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_ma
     add_ylim_max = y_offset_max*np.abs(max(ylim) - min(ylim))
     pl.ylim( [min(ylim) - add_ylim_min, max(ylim) + add_ylim_max] ) 
 
-def get_colorscale(n_colors):
+def get_colorscale(n_colors, cmap_name='jet'):
 
-    import colorsys
-    HSV_tuples = [(x*1.0/n_colors, 0.75, 0.75) for x in range(n_colors)]
-    RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
+    # import colorsys
+    # HSV_tuples = [(x*1.0/n_colors, 0.75, 0.75) for x in range(n_colors)]
+    # RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 
-    return RGB_tuples
+    import numpy as np 
+    import matplotlib.cm as cm 
+    cmap = cm.get_cmap(cmap_name, n_colors) 
+    return cmap(np.arange(n_colors)) 
+
+    # return RGB_tuples
 
 def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
   

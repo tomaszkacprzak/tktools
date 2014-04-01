@@ -10,6 +10,23 @@ stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 log = default_log
+log.propagate = False
+
+def get_func_split(grid,func,n_split_by=100):
+
+    n_grid = len(grid)
+    dens = np.zeros_like(grid)
+
+    for i in range(0,n_grid,n_split_by):
+
+        i1 = i
+        i2 = i1 + n_split_by
+        if i2 > n_grid: i2 = n_grid
+        
+        dens[i1:i2] = func(grid[i1:i2])
+        log.debug('part from %d to %d',i1,i2)
+
+    return dens
 
 def get_normalisation(log_post):
 
