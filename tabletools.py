@@ -61,14 +61,14 @@ def addTable(table_name,table,log=default_log):
         loaded_tables[table_name] = table
 
 
-def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default_log,skiprows=0):
+def loadTable(filepath,remember=False,dtype=None,hdu=None,log=default_log,skiprows=0):
 
     log = setLog(log)
 
-    if (table_name in loaded_tables) and (table_name !='do_not_store'):
+    if (filepath in loaded_tables) and remember:
 
-        log.debug('using preloaded array %s' % table_name)
-        table = loaded_tables[table_name]
+        log.debug('using preloaded array %s' % filepath)
+        table = loaded_tables[filepath]
     
     else:
 
@@ -100,7 +100,7 @@ def loadTable(filepath,table_name='do_not_store',dtype=None,hdu=None,log=default
     
     log.info('loaded %s correctly, got %d rows' % (filepath,len(table)))
 
-    if ( table_name != 'do_not_store' ): loaded_tables[table_name] = table
+    if remember: loaded_tables[filepath] = table
 
     return table
 
@@ -110,33 +110,44 @@ def savePickle(filepath,obj,append=False,log=default_log):
 
     import cPickle as pickle
     if append==True:
-        file_pickle = open(filepath,'a')
+        file_pickle = open(filepath,'ab')
     else:
         file_pickle = open(filepath,'w')
-    pickle.dump(obj,file_pickle,protocol=2)
+    pickle.dump(obj,file_pickle,protocol=2) 
     file_pickle.close()
+
+    # file_pickle = open(filepath,'ab')
+    # file_pickle.write('\n')
+
     if append:
         log.info('appended pickle %s' , filepath)
     else:
         log.info('pickled %s' , filepath)
 
-def loadPickle(filepath,log=default_log):
+def loadPickle(filepath,pos=None,log=default_log):
 
     log = setLog(log)
 
     import cPickle as pickle
     file_pickle = open(filepath,'rb')
-    objs = []
-    while 1:
-        try:
-            objs.append(pickle.load(file_pickle))
-        except EOFError:
-            break
+    if pos==None:
+        objs = []
+        while 1:
+            try:
+                objs.append(pickle.load(file_pickle))
+            except EOFError:
+                break
+
+        if len(objs) == 1:
+            objs=objs[0]
+    else:
+        for i in range(0,pos):
+            pickle.load(file_pickle)
+
+        return pickle.load(file_pickle)
+
     file_pickle.close()
-
-    if len(objs) == 1:
-        objs=objs[0]
-
+    
     return objs
 
 def writeHeader(filepath,dtype,log=default_log):
@@ -161,7 +172,11 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
                 numpy.dtype('float64') : '% .10e' ,
                 numpy.dtype('>i8') : '% 12d',
                 numpy.dtype('>f8') : '% .10f',
-                numpy.dtype('S1024') : '%s',}
+                numpy.dtype('S1024') : '%s',
+                numpy.dtype('S64') : '%s',
+                numpy.dtype('S32') : '%s',
+                numpy.dtype('S16') : '%s'}
+
 
     if dtype!=None:
         table = array2recarray(table,dtype=dtype)
@@ -224,38 +239,40 @@ def getBinaryTable(numpy_array):
     import numpy
     import pyfits
     numpy_array = numpy.array(numpy_array)
-    formats = { numpy.dtype('int64') : 'K' , 
-                numpy.dtype('int16') : 'I' , 
-                numpy.dtype('int32') : 'J' , 
-                numpy.dtype('float32') : 'E' , 
-                numpy.dtype('float64') : 'D' ,
-                numpy.dtype('>i2') : 'I', 
-                numpy.dtype('>i8') : 'K', 
-                numpy.dtype('>i4') : 'I', 
-                numpy.dtype('>f4') : 'E' , 
-                numpy.dtype('>f8') : 'D',
-                numpy.dtype('S1024') : '1024A',
-                numpy.dtype('S4') : '4A'}
-    # formats = { numpy.dtype('int64') : '' , 
-    #             numpy.dtype('int16') : 'I' , 
-    #             numpy.dtype('int32') : 'J' , 
-    #             numpy.dtype('float32') : 'E' , 
-    #             numpy.dtype('float64') : 'D' ,
-    #             numpy.dtype('>i2') : 'I', 
-    #             numpy.dtype('>i8') : 'K', 
-    #             numpy.dtype('>i4') : 'I', 
-    #             numpy.dtype('>f4') : 'E' , 
-    #             numpy.dtype('>f8') : 'D'}
+
+    def _getFormat(col_type):
+    
+        formats = { numpy.dtype('int64') : 'K' , 
+                    numpy.dtype('int16') : 'I' , 
+                    numpy.dtype('int32') : 'J' , 
+                    numpy.dtype('float32') : 'E' , 
+                    numpy.dtype('float64') : 'D' ,
+                    numpy.dtype('>i2') : 'I', 
+                    numpy.dtype('>i8') : 'K', 
+                    numpy.dtype('>i4') : 'I', 
+                    numpy.dtype('>f4') : 'E' , 
+                    numpy.dtype('>f8') : 'D',
+                    numpy.dtype('S1024') : '1024A',
+                    numpy.dtype('S4') : '4A'}
+        
+        if 'S' in str(col_type):
+            fmt= str(col_type)[2:] + 'A'
+        else: 
+            fmt= formats[col_type]
+
+        return fmt
+
 
     cols = []
 
     for i,col_name in enumerate(numpy_array.dtype.names):
         col_type = numpy_array.dtype[i]
-        col_fmt = formats[col_type]
+        col_fmt = _getFormat(col_type)
         col = pyfits.Column(name=col_name,format=col_fmt,array=numpy_array[col_name])
         cols.append(col)
 
     tbhdu = pyfits.new_table(pyfits.ColDefs(cols))
+
     return tbhdu
 
 
