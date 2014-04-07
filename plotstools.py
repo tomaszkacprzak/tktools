@@ -63,25 +63,69 @@ def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
 
 
 
-def get_bins_centers(bins_edges):
+def get_bins_centers(bins_edges,constant_spacing=True):
 
     # ensure np array
     bins_edges=np.array(bins_edges)
+    bins_centers=np.zeros(len(bins_edges)-1)
 
     # get distance
-    dx = bins_edges[1] - bins_edges[0]
-    # print len(bins_edges)
-    bins_centers = bins_edges[:-1] + dx/2.
+    if constant_spacing:
+        dx = bins_edges[1] - bins_edges[0]
+        # print len(bins_edges)
+        bins_centers = bins_edges[:-1] + dx/2.
+    else:
+
+        for be in range(len(bins_edges)-1):
+            bins_centers[be] = np.mean([bins_edges[be],bins_edges[be+1]])      
+
     # print len(bins_centers)
     return bins_centers
 
-def get_bins_edges(bins_centers):
+def get_bins_edges(bins_centers,constant_spacing=True):
 
-    dx = bins_centers[1] - bins_centers[0]
-    # print len(bins_centers)
-    bins_edges = bins_centers.copy() - dx/2.
-    last = bins_edges[-1]
-    bins_edges = np.append(bins_edges , last+dx)
+    if constant_spacing:
+        dx = bins_centers[1] - bins_centers[0]
+        # print len(bins_centers)
+        bins_edges = bins_centers.copy() - dx/2.
+        last = bins_edges[-1]
+        bins_edges = np.append(bins_edges , last+dx)
+
+    else:
+        bins_centers=np.array(bins_centers)
+        bins_edges=np.zeros(len(bins_centers)+1)
+
+        # fill in first and last using spline
+        bins_size = np.diff(bins_centers)
+        # import pdb; pdb.set_trace()
+        import scipy.interpolate
+        spline_rep = scipy.interpolate.splrep( range(len(bins_size)), bins_size, xb=-2, xe=len(bins_size)+2)
+
+        bins_edges[0] =  (bins_centers[1] + bins_centers[0])/2.  - scipy.interpolate.splev(-1,spline_rep)
+        bins_edges[-1] =  (bins_centers[-2] + bins_centers[-1])/2. + scipy.interpolate.splev(len(bins_size)+1,spline_rep)
+        
+        # pl.figure()
+        # pl.plot(range(len(bins_size)), bins_size , 'x-')
+        # pl.plot(range(-1,len(bins_size)), scipy.interpolate.splev(range(-1,len(bins_size)),spline_rep) , 'o-')
+
+        # dx_first=bins_centers[1]-bins_centers[0]
+        # bins_edges[0] = bins_centers[0]-dx_first/2.
+        # dx_last=bins_centers[-1]-bins_centers[-2]
+        # bins_edges[-1] = bins_centers[-1]+dx_last/2.
+
+
+        for be in range(1,len(bins_centers)):
+            # size of first element is 
+            bins_edges[be] = np.mean([bins_centers[be-1],bins_centers[be]])      
+
+        # pl.figure()
+        # pl.plot(bins_edges,  np.ones_like(bins_edges),'x-',label='edges')
+        # pl.plot(bins_centers, np.zeros_like(bins_centers),'o-',label='centers')
+        # pl.ylim([-2,3])
+        # pl.xscale('log')
+        # pl.legend()
+        # pl.show()
+
     # print len(new_bins_hist)
     return bins_edges
 
