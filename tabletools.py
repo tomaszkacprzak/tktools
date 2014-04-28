@@ -44,6 +44,7 @@ def setLog(log):
 
 def toMatrix(x):
 
+    raise Exception('this crashes!')
     return x.view(np.float64).reshape(x.shape + (-1,))
 
 

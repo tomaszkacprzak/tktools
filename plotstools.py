@@ -77,6 +77,8 @@ def get_bins_centers(bins_edges):
 
 def get_bins_edges(bins_centers):
 
+    bins_centers = np.array(bins_centers)
+
     dx = bins_centers[1] - bins_centers[0]
     # print len(bins_centers)
     bins_edges = bins_centers.copy() - dx/2.

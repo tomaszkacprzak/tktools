@@ -192,3 +192,55 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
 
     return list_levels , list_sigmas
 
+
+def get_kl_divergence_from_samples(samples_p,samples_q,n_neighbor=10):
+
+    # https://www.princeton.edu/~verdu/nearest.neigh.pdf
+
+
+    from sklearn.neighbors import BallTree
+
+    d = float(samples_p.shape[1])
+    n = float(samples_p.shape[0])
+    m = float(samples_q.shape[0])
+    if m!=n:
+        raise Exception('m!=n unsupported')
+
+    ball_tree_p = BallTree(samples_p, leaf_size=5)        
+    ball_tree_q = BallTree(samples_q, leaf_size=5)        
+    log.info('querying ball 1')
+    rho, rho_ind = ball_tree_p.query(samples_p, k=n_neighbor+1)        
+    log.info('querying ball 2')
+    nu, nu_ind   = ball_tree_q.query(samples_p, k=n_neighbor+1)        
+
+    vec = nu[:,n_neighbor] / rho[:,n_neighbor]
+    vec = vec[~np.isnan(vec)]
+    vec = vec[~np.isnan(np.log(vec))]
+    vec = vec[~np.isinf(vec)]
+    vec = vec[~np.isinf(np.log(vec))]
+
+    n = len(vec)
+    m = len(vec)
+
+    kl_pq = d / n * np.sum(np.log(vec))  + np.log(m/(n-1.))
+
+    return kl_pq
+
+def test_kl_divergence_from_samples():
+
+
+    samples_p = np.random.randn(10000)[:,None]
+    samples_q = np.random.randn(10000)[:,None]
+
+    sig1=5
+    grid_sig2 = np.linspace(1,10,10)
+    list_kl_pq = []
+    for sig2 in grid_sig2:
+
+        kl_pq = get_kl_divergence_from_samples(samples_p*sig1,samples_q*sig2)
+        list_kl_pq.append(kl_pq)
+        print sig1,sig2,kl_pq
+
+    pl.plot(grid_sig2,list_kl_pq)
+    pl.show()
+
