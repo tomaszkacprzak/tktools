@@ -148,6 +148,8 @@ def loadPickle(filepath,pos=None,log=default_log):
         return pickle.load(file_pickle)
 
     file_pickle.close()
+
+    log.info('loaded pickle %s' , filepath)
     
     return objs
 

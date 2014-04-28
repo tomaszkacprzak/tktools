@@ -244,3 +244,134 @@ def test_kl_divergence_from_samples():
     pl.plot(grid_sig2,list_kl_pq)
     pl.show()
 
+def get_1D_fwhm(profile,fwxm=0.5):
+
+
+    f0 = max(profile)
+    x0 = np.argmax(profile)
+
+    profile1 = profile[:x0]
+    profile2 = profile[x0:]
+
+    cut_val = f0 * fwxm
+
+    diff = abs(profile1 - cut_val)
+    f1 ,f2, x1, x2 = 0. , 0. , 0. , 0.
+    x1 = np.argmin(diff) ;  f1 = profile1[x1]
+    if( f1 < cut_val ):  x2 = x1+1
+    else:       x2 = x1-1
+    f2 = profile1[x2];
+    a = (f1-f2)/(x1 - x2)
+    b = f1 - a*x1;
+    x31 = (cut_val - b)/a;
+
+    diff = abs(profile2 - cut_val)
+    f1 ,f2, x1, x2 = 0. , 0. , 0. , 0.
+    x1 = np.argmin(diff) ;  f1 = profile2[x1]
+    if( f1 < cut_val ):  x2 = x1+1
+    else:       x2 = x1-1
+    f2 = profile2[x2];
+    a = (f1-f2)/(x1 - x2)
+    b = f1 - a*x1;
+    x32 = (cut_val - b)/a + x0
+
+    fwhm = np.abs(x31-x32)
+
+    # fwhm =  np.abs(2.* (x3-x0))
+
+    pl.figure()
+    pl.plot(x0,f0,'ro')
+    pl.plot(profile,'r.-')
+    pl.plot(x31,cut_val,'bo')
+    pl.plot(x32,cut_val,'bo')
+    pl.axhline(f0*fwxm)
+
+
+    return fwhm
+
+
+def get_2D_fwhm(lores_img):
+
+    n_sub = 11
+    n_angles = 64
+    img = np.kron(lores_img,np.ones([n_sub,n_sub]))
+
+    n_pix = img.shape[0]
+    s_box = float(n_pix)*np.sqrt(2.)/4. + 1e-7
+    n_box = int(s_box)
+    s_pix = 0.5
+
+
+    x0,y0 = n_pix/2. ,n_pix/2.
+    X,Y=np.meshgrid(np.arange(n_pix)-x0,np.arange(n_pix)-y0)
+
+    x= np.concatenate( [ X.flatten()[:,None] ,  Y.flatten()[:,None] ],axis=1)
+    i= img.flatten()[:,None]
+    # print 'max image' , max(i)
+
+    angles= np.linspace(0,2,n_angles)*np.pi
+    # angles= np.array([0 , np.pi/4 , np.pi/2.])
+    y1 = np.array( [ np.exp(1j*angles).real , np.exp(1j*angles).imag ] )
+    y2 = np.array( [ np.exp(1j*(angles+np.pi/2.)).real , np.exp(1j*(angles+np.pi/2.)).imag ] )
+
+
+    p = np.dot(x,y1)
+    r = np.dot(x,y2)
+
+    # s_upsampled_pixel = float(n_box)*2./n_sub
+    grid_edges = np.linspace(-s_box/2.,s_box/2.,float(n_box)/float(n_sub)*3)
+    grid_centers = plotstools.get_bins_centers(grid_edges)
+    
+    # colors=plotstools.get_colorscale(len(angles))
+    # pl.figure(100)
+    
+    h=np.zeros([len(grid_centers),len(angles)])
+    for ia,ang in enumerate(angles):
+
+        # select close pixel -- 
+        select = (np.abs(r[:,ia]) < s_pix) * (np.abs(p[:,ia]) < s_box)
+
+        #for angle measurement, select all pixels in box
+        # select = (np.abs(r[:,ia]) < s_box) * (np.abs(p[:,ia]) < s_box)
+
+        # pl.figure()
+        # pl.scatter(x[:,0],x[:,1],c='y'); 
+        # pl.scatter(x[select,0],x[select,1]);
+        # pl.axis('equal')
+        # pl.show()
+
+        h1 , _ = np.histogram(p[select,ia][:,None],bins=grid_edges,weights=i[select])
+        h2 , _ = np.histogram(p[select,ia][:,None],bins=grid_edges)
+        h[:,ia] = h1/h2
+
+        # # from scipy.interpolate import Rbf
+        # # rbf = Rbf(p[:,ia], i.flatten())
+        # # h[:,ia] = rbf(grid_centers)
+        # pl.plot(grid_centers,h[:,ia],'.',label=str(ang/np.pi),c=colors[ia])
+
+    # mean_prof = np.mean(h,axis=1)
+    max_prof = np.min(h,axis=1)
+    min_prof = np.max(h,axis=1)
+    mean_prof = (max_prof + min_prof)/2.
+    dx=np.abs(grid_centers[2]-grid_centers[1])
+    fwhm=get_1D_fwhm(mean_prof) * dx 
+
+    # pl.figure(100)
+    # pl.plot(grid_centers,mean_prof,'ks-',label='mean',ms=5)
+    # grid_centered=np.arange(img.shape[0]) - img.shape[0]/2
+    # # pl.plot(grid_centered, img[img.shape[0]/2,:],'gd')
+    # pl.plot(grid_centered, img[:,img.shape[0]/2],'gd')
+    # pl.plot(-fwhm/2.,0.5*max(mean_prof),'ro',ms=5)
+    # pl.plot(+fwhm/2.,0.5*max(mean_prof),'ro',ms=5)
+    # # pl.plot(-true_fwhm/2.*n_sub,0.5*max(lores_img.flatten()),'rd',ms=5)
+    # pl.plot(+true_fwhm/2.*n_sub,0.5*max(lores_img.flatten()),'rd',ms=5)
+    # # pl.legend()
+
+
+    # print 'dx' , dx
+    # print 'get_1D_fwhm' , fwhm / float(n_sub)
+    # print 'get_1D_fwhm' , get_1D_fwhm(mean_prof)
+    # print 'get_1D_fwhm x cross' , get_1D_fwhm(lores_img[lores_img.shape[0]/2,:])/float(n_sub)
+    # print 'get_1D_fwhm y cross' , get_1D_fwhm(lores_img[:,lores_img.shape[0]/2])/float(n_sub)
+    
+    return fwhm / float(n_sub)
