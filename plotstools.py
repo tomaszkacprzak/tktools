@@ -84,7 +84,9 @@ def get_bins_centers(bins_edges,constant_spacing=True):
 
 def get_bins_edges(bins_centers,constant_spacing=True):
 
+    
     if constant_spacing:
+        bins_centers = np.array(bins_centers)
         dx = bins_centers[1] - bins_centers[0]
         # print len(bins_centers)
         bins_edges = bins_centers.copy() - dx/2.
@@ -190,11 +192,15 @@ class multi_dim_dist():
     def __init__(self):
     
         self.n_contours = 20
-        self.color_step = 'b'
         self.y_offset_min = 0
         self.x_offset_max = 0
         self.x_offset_min = 0
         self.arr_plot_method = 'pcolormesh'
+        self.color = 'b'
+        self.contour = True
+        self.contourf = False
+        self.colormesh = True
+        self.scatter = False
 
     def get_grids(self,x,y,bins_x,bins_y):
 
@@ -255,12 +261,23 @@ class multi_dim_dist():
         n_contours = min([n_grid_y,n_grid_x]) / 3
         log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
-        # pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
-        pl.pcolormesh(xi, yi, zi)
-        # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
         contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
-        cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
-        # cp = pl.contourf(xi, yi, zi,levels=contour_levels, cmap=pl.cm.Blues)
+      
+        if self.colormesh:
+            pl.pcolormesh(xi, yi, zi)
+            # pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
+
+        if self.contour:
+            cp = pl.contour(xi, yi, zi,levels=contour_levels,colors=self.color)
+            # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+            # plt.clabel(cp, inline=1, fontsize=10)
+
+
+        if self.contourf:
+            cp = pl.contourf(xi, yi, zi,levels=contour_levels, cmap=pl.cm.Blues)
+
+        if self.scatter:
+            pl.scatter(x,y,0.1)
 
 
         # cp = pl.contour(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
@@ -292,7 +309,7 @@ class multi_dim_dist():
             iall += 1
             log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
             pl.subplot(n_dims,n_dims,isub)       
-            hist_levels, hist_bins , _ = pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
+            hist_levels, hist_bins , _ = pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color)
             pl.ylim([0,  max(hist_levels)*1.1 ])
            
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
@@ -473,10 +490,20 @@ def get_plot_bar_data(x,y):
 
 
 
-def plot_dist(X,bins='def',labels='def'):
+def plot_dist(X,bins='def',labels='def',contour=True,colormesh=True,scatter=False,contourf=False,use_fraction=None,color='b'):
 
+    if use_fraction!=None:
+        nx = X.shape[0]
+        ns = int(nx*use_fraction)
+        perm=np.random.permutation(nx)[:ns]
+        X=X[perm,:]
 
     mdd = multi_dim_dist()
+    mdd.color=color
+    mdd.contour=contour
+    mdd.contourf=contourf
+    mdd.colormesh=colormesh
+    mdd.scatter=scatter
     mdd.plot_dist(X,bins=bins,labels=labels)
 
 def plot_dist_grid(X,y,labels='def'):
