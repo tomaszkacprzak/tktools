@@ -247,11 +247,15 @@ class multi_dim_dist():
         log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
         # pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
-        pl.pcolormesh(xi, yi, zi)
-        # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
-        contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
-        cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
-        # cp = pl.contourf(xi, yi, zi,levels=contour_levels, cmap=pl.cm.Blues)
+
+        if self.intensity:
+            pl.pcolormesh(xi, yi, zi)
+
+        if self.contours:
+            # cp = pl.contour(xi, yi, zi,n_contours,cmap=pl.cm.Blues)
+            contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
+            cp = pl.contour(xi, yi, zi,levels=contour_levels,colors='r')
+            # cp = pl.contourf(xi, yi, zi,levels=contour_levels, cmap=pl.cm.Blues)
 
 
         # cp = pl.contour(xi, yi, zi,levels=contour_levels,cmap=pl.cm.Blues)
@@ -464,10 +468,17 @@ def get_plot_bar_data(x,y):
 
 
 
-def plot_dist(X,bins='def',labels='def'):
+def plot_dist(X,bins='def',labels='def',contours=True,intensity=True,use_fraction=None):
 
+    if use_fraction!=None:
+        nx = X.shape[0]
+        ns = int(nx*use_fraction)
+        perm np.random.permutation(nx)[:ns]
+        X=X[perm,:]
 
     mdd = multi_dim_dist()
+    mdd.contours=contours
+    mdd.intensity=intensity
     mdd.plot_dist(X,bins=bins,labels=labels)
 
 def plot_dist_grid(X,y,labels='def'):

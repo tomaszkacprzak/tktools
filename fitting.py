@@ -14,6 +14,13 @@ def linearBasis(x):
 	X = concatenate( (ones((n_points_x,1)),x),axis=1 )
 	return X
 
+def polynomialCustomBasis(x):
+
+	n_points_x = x.shape[0]
+	X = concatenate( (ones((n_points_x,1)),x,x**3,x**5),axis=1 )
+	return X
+
+
 
 def fit(x,y,s="none",expand=linearBasis,empirical_errors=False):
 

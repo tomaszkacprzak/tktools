@@ -12,6 +12,17 @@ default_log.addHandler(stream_handler)
 log = default_log
 log.propagate = False
 
+def get_bin_membership_matrix(x,bin_edges):
+
+    digitized = np.array(np.digitize(x,bins=bin_edges)) -1
+    M = np.zeros([len(x),len(bin_edges)-1])
+    # for i in range(len(digitized)): 
+    #     M[i,digitized[i]]=1
+    #     if i % 1000 == 0 : print i, print len(digitized)
+    M[range(len(x)),digitized]=1
+    return M
+
+
 def get_func_split(grid,func,n_split_by=100):
 
     n_grid = len(grid)
