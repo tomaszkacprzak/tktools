@@ -204,8 +204,60 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
     return list_levels , list_sigmas
 
 
+def get_kl_divergence_from_samples(samples_p,samples_q,n_neighbor=10):
+
+    # https://www.princeton.edu/~verdu/nearest.neigh.pdf
+
+
+    from sklearn.neighbors import BallTree
+
+    d = float(samples_p.shape[1])
+    n = float(samples_p.shape[0])
+    m = float(samples_q.shape[0])
+    if m!=n:
+        raise Exception('m!=n unsupported')
+
+    ball_tree_p = BallTree(samples_p, leaf_size=5)        
+    ball_tree_q = BallTree(samples_q, leaf_size=5)        
+    log.info('querying ball 1')
+    rho, rho_ind = ball_tree_p.query(samples_p, k=n_neighbor+1)        
+    log.info('querying ball 2')
+    nu, nu_ind   = ball_tree_q.query(samples_p, k=n_neighbor+1)        
+
+    vec = nu[:,n_neighbor] / rho[:,n_neighbor]
+    vec = vec[~np.isnan(vec)]
+    vec = vec[~np.isnan(np.log(vec))]
+    vec = vec[~np.isinf(vec)]
+    vec = vec[~np.isinf(np.log(vec))]
+
+    n = len(vec)
+    m = len(vec)
+
+    kl_pq = d / n * np.sum(np.log(vec))  + np.log(m/(n-1.))
+
+    return kl_pq
+
+def test_kl_divergence_from_samples():
+
+
+    samples_p = np.random.randn(10000)[:,None]
+    samples_q = np.random.randn(10000)[:,None]
+
+    sig1=5
+    grid_sig2 = np.linspace(1,10,10)
+    list_kl_pq = []
+    for sig2 in grid_sig2:
+
+        kl_pq = get_kl_divergence_from_samples(samples_p*sig1,samples_q*sig2)
+        list_kl_pq.append(kl_pq)
+        print sig1,sig2,kl_pq
+
+    pl.plot(grid_sig2,list_kl_pq)
+    pl.show()
+
 def get_1D_fwhm(profile,fwxm=0.5):
 
+    # pl.figure()
 
     f0 = max(profile)
     x0 = np.argmax(profile)
@@ -224,27 +276,33 @@ def get_1D_fwhm(profile,fwxm=0.5):
     a = (f1-f2)/(x1 - x2)
     b = f1 - a*x1;
     x31 = (cut_val - b)/a;
+    # pl.plot(x1,f1,'dc',ms=10)
+    # pl.plot(x2,f2,'dg',ms=10)
+    # print x1,f1
+    # print x2,f2
 
     diff = abs(profile2 - cut_val)
     f1 ,f2, x1, x2 = 0. , 0. , 0. , 0.
     x1 = np.argmin(diff) ;  f1 = profile2[x1]
-    if( f1 < cut_val ):  x2 = x1+1
-    else:       x2 = x1-1
+    if( f1 < cut_val ):  x2 = x1-1
+    else:       x2 = x1+1
     f2 = profile2[x2];
     a = (f1-f2)/(x1 - x2)
     b = f1 - a*x1;
     x32 = (cut_val - b)/a + x0
-
+    # pl.plot(x0+x1,f1,'dc',ms=10)
+    # pl.plot(x0+x2,f2,'dg',ms=10)
+    # print x1,f1
+    # print x2,f2
     fwhm = np.abs(x31-x32)
 
     # fwhm =  np.abs(2.* (x3-x0))
 
-    pl.figure()
-    pl.plot(x0,f0,'ro')
-    pl.plot(profile,'r.-')
-    pl.plot(x31,cut_val,'bo')
-    pl.plot(x32,cut_val,'bo')
-    pl.axhline(f0*fwxm)
+    # pl.plot(x0,f0,'ro')
+    # pl.plot(profile,'r.-')
+    # pl.plot(x31,cut_val,'bo')
+    # pl.plot(x32,cut_val,'bo')
+    # pl.axhline(f0*fwxm)
 
 
     return fwhm
@@ -279,13 +337,12 @@ def get_2D_fwhm(lores_img):
     r = np.dot(x,y2)
 
     # s_upsampled_pixel = float(n_box)*2./n_sub
-    grid_edges = np.linspace(-s_box/2.,s_box/2.,float(n_box)/float(n_sub)*3)
+    grid_edges = np.linspace(-s_box/2.,s_box/2.,float(n_box)/float(n_sub)*4)
     grid_centers = plotstools.get_bins_centers(grid_edges)
     
-    # colors=plotstools.get_colorscale(len(angles))
-    # pl.figure(100)
-    
+    colors=plotstools.get_colorscale(len(angles))
     h=np.zeros([len(grid_centers),len(angles)])
+    # pl.figure(100)
     for ia,ang in enumerate(angles):
 
         # select close pixel -- 
@@ -307,25 +364,26 @@ def get_2D_fwhm(lores_img):
         # # from scipy.interpolate import Rbf
         # # rbf = Rbf(p[:,ia], i.flatten())
         # # h[:,ia] = rbf(grid_centers)
-        # pl.plot(grid_centers,h[:,ia],'.',label=str(ang/np.pi),c=colors[ia])
+        pl.plot(grid_centers,h[:,ia],'.',label=str(ang/np.pi),c=colors[ia])
 
-    # mean_prof = np.mean(h,axis=1)
-    max_prof = np.min(h,axis=1)
-    min_prof = np.max(h,axis=1)
-    mean_prof = (max_prof + min_prof)/2.
+    mean_prof = np.mean(h,axis=1)
+    # max_prof = np.min(h,axis=1)
+    # min_prof = np.max(h,axis=1)
+    # mean_prof = (max_prof + min_prof)/2.
     dx=np.abs(grid_centers[2]-grid_centers[1])
-    fwhm=get_1D_fwhm(mean_prof) * dx 
+    fwhm=get_1D_fwhm(mean_prof) * dx / float(n_sub)
 
     # pl.figure(100)
     # pl.plot(grid_centers,mean_prof,'ks-',label='mean',ms=5)
     # grid_centered=np.arange(img.shape[0]) - img.shape[0]/2
-    # # pl.plot(grid_centered, img[img.shape[0]/2,:],'gd')
+    # pl.plot(grid_centered, img[img.shape[0]/2,:],'gd')
     # pl.plot(grid_centered, img[:,img.shape[0]/2],'gd')
     # pl.plot(-fwhm/2.,0.5*max(mean_prof),'ro',ms=5)
     # pl.plot(+fwhm/2.,0.5*max(mean_prof),'ro',ms=5)
-    # # pl.plot(-true_fwhm/2.*n_sub,0.5*max(lores_img.flatten()),'rd',ms=5)
+    # global true_fwhm
+    # pl.plot(-true_fwhm/2.*n_sub,0.5*max(lores_img.flatten()),'rd',ms=5)
     # pl.plot(+true_fwhm/2.*n_sub,0.5*max(lores_img.flatten()),'rd',ms=5)
-    # # pl.legend()
+    # pl.legend()
 
 
     # print 'dx' , dx
@@ -333,5 +391,8 @@ def get_2D_fwhm(lores_img):
     # print 'get_1D_fwhm' , get_1D_fwhm(mean_prof)
     # print 'get_1D_fwhm x cross' , get_1D_fwhm(lores_img[lores_img.shape[0]/2,:])/float(n_sub)
     # print 'get_1D_fwhm y cross' , get_1D_fwhm(lores_img[:,lores_img.shape[0]/2])/float(n_sub)
-    
-    return fwhm / float(n_sub)
+
+    return fwhm
+
+    # pl.figure()
+    # pl.plot(p,i,'r.')

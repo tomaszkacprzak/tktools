@@ -37,6 +37,9 @@ def setLog(log):
             default_log.setLevel(logging_levels_str[log])
         except:
             raise Exception('Unknow log level %s' % log) 
+    else:
+        default_log.setLevel(logging.INFO)
+    
 
     log = default_log
     return log
@@ -44,6 +47,7 @@ def setLog(log):
 
 def toMatrix(x):
 
+    raise Exception('this crashes!')
     return x.view(np.float64).reshape(x.shape + (-1,))
 
 
@@ -173,6 +177,7 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
                 numpy.dtype('float32') : '% .10e' ,
                 numpy.dtype('float64') : '% .10e' ,
                 numpy.dtype('>i8') : '% 12d',
+                numpy.dtype('>i4') : '% 12d',
                 numpy.dtype('>f8') : '% .10f',
                 numpy.dtype('S1024') : '%s',
                 numpy.dtype('S64') : '%s',
@@ -222,17 +227,22 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
             log.info('appended table %s %d rows' % (filepath,len(table)))
         else:
 
-            header = '# ' + ' '.join(table.dtype.names)
-            fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
-            float(numpy.__version__[0:3])
-            if float(numpy.__version__[0:3]) >= 1.7:
-                numpy.savetxt(filepath,table,header=header,fmt=fmt,delimiter='\t')
-            else:
+            try:
+                header = '# ' + ' '.join(table.dtype.names)
+                fmt = [formats[table.dtype.fields[f][0]] for f in table.dtype.names]
+                float(numpy.__version__[0:3])
+                if float(numpy.__version__[0:3]) >= 1.7:
+                    numpy.savetxt(filepath,table,header=header,fmt=fmt,delimiter='\t')
+                else:
+                    numpy.savetxt(filepath,table,fmt=fmt,delimiter='\t')
+                    with file(filepath, 'r') as original: data = original.read()
+                    with file(filepath, 'w') as modified: 
+                        modified.write(header + '\n' + data)
+                        modified.close()
+            except:
+                fmt=formats[table.dtype]
                 numpy.savetxt(filepath,table,fmt=fmt,delimiter='\t')
-                with file(filepath, 'r') as original: data = original.read()
-                with file(filepath, 'w') as modified: 
-                    modified.write(header + '\n' + data)
-                    modified.close()
+
             log.info('saved table %s %d rows' % (filepath,len(table)))
             
 
