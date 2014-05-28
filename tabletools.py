@@ -128,9 +128,15 @@ def savePickle(filepath,obj,append=False,log=default_log):
     else:
         log.info('pickled %s' , filepath)
 
-def loadPickle(filepath,pos=None,log=default_log):
+def loadPickle(filepath,pos=None,remember=False,log=default_log):
+
 
     log = setLog(log)
+
+    if (filepath in loaded_tables) and remember:
+
+        log.debug('using preloaded array %s' % filepath)
+        objs = loaded_tables[filepath]
 
     import cPickle as pickle
     file_pickle = open(filepath,'rb')
@@ -151,6 +157,8 @@ def loadPickle(filepath,pos=None,log=default_log):
         return pickle.load(file_pickle)
 
     file_pickle.close()
+
+    if remember: loaded_tables[filepath] = objs
 
     log.info('loaded pickle %s' , filepath)
     
