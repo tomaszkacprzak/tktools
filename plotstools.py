@@ -12,6 +12,20 @@ default_log.addHandler(stream_handler)
 default_log.propagate = False
 log = default_log
 
+def plot_radec(ra,dec,lat0=0,lon0=0,**kwargs):
+
+    from mpl_toolkits.basemap import Basemap
+    import numpy as np
+    bmap = Basemap(projection='ortho',lat_0=lat0,lon_0=lon0,resolution='c')
+    bmap.drawparallels(np.arange(-90.,120.,30.))
+    bmap.drawmeridians(np.arange(0.,420.,60.))
+    bmap.drawmapboundary()
+    x1,y1 = bmap(ra,dec)
+    bmap.scatter(x1,y1,**kwargs) 
+
+    return x1,y1
+ 
+
 def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
     """
     @brief Create an image from values on a grid.
@@ -207,14 +221,14 @@ class multi_dim_dist():
         if isinstance(bins_x,int):
             grid_x=np.linspace(x.min(),x.max(),bins_x)
             n_grid_x = bins_x
-        elif isinstance(bins_x,list):
+        elif isinstance(bins_x,list) or isinstance(bins_x,np.ndarray):
             grid_x=bins_x
             n_grid_x = len(bins_x)
 
         if isinstance(bins_y,int):
             grid_y=np.linspace(y.min(),y.max(),bins_y)
             n_grid_y = bins_y
-        elif isinstance(bins_y,list):
+        elif isinstance(bins_y,list) or isinstance(bins_y,np.ndarray):
             grid_y=bins_y
             n_grid_y = len(bins_y)
 
@@ -246,6 +260,12 @@ class multi_dim_dist():
 
 
     def kde_plot(self,x,y,bins_x,bins_y):
+        """
+        @param x samples first dimension
+        @param y samples second dimension
+        @param bins_x bins for first dimension, as for hist function
+        @param bins_y bins for first dimension, as for hist function
+        """
 
         # pl.hist2d(x,y,bins=[bins_x,bins_y])
         # pl.imshow(like)
