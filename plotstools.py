@@ -470,6 +470,129 @@ class multi_dim_dist():
 
                 # adjust_limits(y_offset_min=self.y_offset_min,x_offset_max=self.x_offset_max,x_offset_min=self.x_offset_min)
 
+    def plot_dist_meshgrid(self,X,y,labels='def'):
+
+        n_dims = len(X)
+        shape_list = np.array([x for x in X[0].shape])
+        if labels=='def':  labels = ['param %d ' % ind for ind in range(n_dims)]
+
+        list_prob_marg_2d = mathstools.empty_lists(n_dims,n_dims)
+        list_params_marg_2d = mathstools.empty_lists(n_dims,n_dims)
+        list_prob_marg = [None]*n_dims
+        list_params_marg = [None]*n_dims
+           
+        for dim in range(n_dims):
+            sum_axis = range(n_dims)
+            sum_axis.remove(dim)
+            prob_marg = np.sum(y,axis=tuple(sum_axis))
+            params_marg = np.sum(X[dim],axis=tuple(sum_axis)) / np.prod(shape_list[sum_axis])
+            list_prob_marg[dim] = prob_marg
+            list_params_marg[dim] = params_marg
+
+
+        for dim1 in range(n_dims):
+            for dim2 in range(n_dims):
+                if dim1==dim2: continue
+                n_grid1 = y.shape[dim1]
+                n_grid2 = y.shape[dim2]
+                sum_axis = range(n_dims)
+                sum_axis.remove(dim1)
+                sum_axis.remove(dim2)
+                prob_marg = np.sum(y,axis=tuple(sum_axis))
+                params_marg1 = np.sum(X[dim1],axis=tuple(sum_axis))/ np.prod(shape_list[sum_axis])
+                params_marg2 = np.sum(X[dim2],axis=tuple(sum_axis))/ np.prod(shape_list[sum_axis])
+                list_prob_marg_2d[dim1][dim2] = prob_marg
+                list_params_marg_2d[dim1][dim2] = (params_marg1,params_marg2) 
+
+        iall=0
+        for ip in range(n_dims):
+
+            isub = ip*n_dims + ip + 1
+            iall += 1
+            log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
+            pl.subplot(n_dims,n_dims,isub)       
+
+            # pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
+            # bar_data_x,bar_data_y = get_plot_bar_data(list_params_marg[ip] , list_prob_marg[ip] )
+            # pl.plot(bar_data_x,bar_data_y)           
+            x=list_params_marg[ip]
+            y=list_prob_marg[ip]
+            pl.plot( x, y , 'x-')
+            xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
+            yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
+            pl.xticks(xticks) ; pl.yticks(yticks)
+            if ip != (n_dims-1):
+                pl.xticks(xticks,[])
+            if iall==1:
+                pl.ylabel(labels[ip])
+
+            # panels in the middle
+            # if (( isub % n_dims) != 1) and (isub <= n_dims*(n_dims-1) ):
+            #     pl.yticks=[]
+            #     pl.xticks=[]
+            #     log.info('no xticks')
+            #     log.info('no yticks')
+
+            # dx=list_params_marg[ip][1]-list_params_marg[ip][0]
+            # pl.xlim([ min(list_params_marg[ip])-dx/2. , max(list_params_marg[ip])+dx/2. ])
+            pl.gca().yaxis.tick_right()
+
+            # adjust_limits(y_offset_min=0,x_offset_max=0,x_offset_min=0)
+
+            if isub==n_dims**2:
+                pl.xlabel(labels[ip])
+
+            for ic in range(ip+1,n_dims):
+                isub = ic*n_dims + ip +1
+                iall += 1
+                log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ic,isub) )
+                pl.subplot(n_dims,n_dims,isub)
+
+
+                Xi = list_params_marg_2d[ip][ic][0]
+                Yi = list_params_marg_2d[ip][ic][1]
+                Zi = list_prob_marg_2d[ip][ic]
+                    
+                if self.contourf:
+                    pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues 
+                if self.colormesh:
+                    pl.pcolormesh(Xi, Yi, Zi)
+
+
+                xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
+                yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
+                pl.xticks(xticks) ; pl.yticks(yticks)
+
+                # if on the left edge
+                if ( isub % n_dims) == 1:
+                    pl.ylabel(labels[ic])
+                    log.debug('ylabel isub %d %s' % (isub,labels[ic]) )
+
+                    # if not on the bottom
+                    if (isub <= n_dims*(n_dims-1) ):
+                        pl.xticks([])
+                        log.debug('no xticks')
+                else:
+                    pl.yticks([])
+
+                # if on the bottom
+                if (isub > n_dims*(n_dims-1) ):
+                    pl.xlabel(labels[ip])
+                    log.debug('xlabel isub %d %s' % (isub,labels[ip]) )
+
+                    # if not on the right side
+                    if ( isub % n_dims) != 1:
+                        pl.yticks([])
+                        log.debug('no yticks')
+                else:
+                    pl.xticks([])
+
+        pl.subplots_adjust(wspace=0, hspace=0)
+
+
+                # adjust_limits(y_offset_min=self.y_offset_min,x_offset_max=self.x_offset_max,x_offset_min=self.x_offset_min)
+
+
 def get_plot_bar_data(x,y):
            
     x = np.ravel(zip(x,x+1)) - (x[1]-x[0])/2.
@@ -501,7 +624,15 @@ def plot_dist_grid(X,y,labels='def'):
     mdd = multi_dim_dist()
     mdd.plot_dist_grid(X,y,labels)
 
+def plot_dist_meshgrid(X,y,labels='def',contour=False,colormesh=True,scatter=False,contourf=False,use_fraction=None,color='b'):
 
+    mdd = multi_dim_dist()
+    mdd.color=color
+    mdd.contour=contour
+    mdd.contourf=contourf
+    mdd.colormesh=colormesh
+    mdd.scatter=scatter
+    mdd.plot_dist_meshgrid(X,y,labels)
 
 if __name__ == '__main__':
 

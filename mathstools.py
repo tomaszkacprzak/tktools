@@ -51,6 +51,17 @@ def get_normalisation(log_post):
        
     return prob_post , log_post , prob_norm , log_norm
 
+def normalise(log_post):
+
+    interm_norm = max(log_post.flatten())
+    log_post = log_post - interm_norm
+    prob_post = np.exp(log_post)
+    prob_norm = np.sum(prob_post)
+    prob_post = prob_post / prob_norm
+    log_post  = np.log(prob_post)
+    log_norm = np.log(prob_norm) + interm_norm
+       
+    return prob_post
 
 def get_marginals(X,y):
     """
@@ -308,10 +319,9 @@ def get_1D_fwhm(profile,fwxm=0.5):
     return fwhm
 
 
-def get_2D_fwhm(lores_img):
+def get_2D_fwhm(lores_img,n_angles=64):
 
     n_sub = 11
-    n_angles = 64
     img = np.kron(lores_img,np.ones([n_sub,n_sub]))
 
     n_pix = img.shape[0]
