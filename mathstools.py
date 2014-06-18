@@ -55,10 +55,10 @@ def normalise(log_post):
 
     interm_norm = max(log_post.flatten())
     log_post_use = log_post - interm_norm
-    prob_post = np.exp(log_post)
+    prob_post = np.exp(log_post_use)
     prob_norm = np.sum(prob_post)
     prob_post = prob_post / prob_norm
-       
+      
     return prob_post
 
 def get_marginals(X,y):

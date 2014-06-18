@@ -216,6 +216,14 @@ def saveTable(filepath,table,log=default_log,append=False,dtype=None):
             pyfits.append(filepath,table)
             log.info('appended table %s %d rows' % (filepath,len(table)))
         else:
+            try: 
+                if len(table.dtype.names)>0:
+                    pyfits.writeto(filepath,fits_obj_to_write,clobber=True)    
+                    return
+
+            except Exception,errmsg:
+                pass
+
             if type(table) is pyfits.core.HDUList:
                 fits_obj_to_write = table
             else:

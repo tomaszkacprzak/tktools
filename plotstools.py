@@ -577,6 +577,11 @@ class multi_dim_dist():
                     pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues 
                 if self.colormesh:
                     pl.pcolormesh(Xi, Yi, Zi)
+                if self.contour:
+                    contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(Zi)
+                    cp = pl.contour(Xi , Yi, Zi,levels=contour_levels,colors='m')
+                pl.axis('tight')    
+
 
 
                 xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
