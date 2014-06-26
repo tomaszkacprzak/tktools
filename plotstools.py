@@ -209,12 +209,12 @@ class multi_dim_dist():
         self.y_offset_min = 0
         self.x_offset_max = 0
         self.x_offset_min = 0
-        self.arr_plot_method = 'pcolormesh'
         self.color = 'b'
         self.contour = True
         self.contourf = False
         self.colormesh = True
         self.scatter = False
+        self.labels='def'
 
     def get_grids(self,x,y,bins_x,bins_y):
 
@@ -490,11 +490,11 @@ class multi_dim_dist():
 
                 # adjust_limits(y_offset_min=self.y_offset_min,x_offset_max=self.x_offset_max,x_offset_min=self.x_offset_min)
 
-    def plot_dist_meshgrid(self,X,y,labels='def'):
+    def plot_dist_meshgrid(self,X,y):
 
         n_dims = len(X)
         shape_list = np.array([x for x in X[0].shape])
-        if labels=='def':  labels = ['param %d ' % ind for ind in range(n_dims)]
+        if self.labels=='def':  self.labels = ['param %d ' % ind for ind in range(n_dims)]
 
         list_prob_marg_2d = mathstools.empty_lists(n_dims,n_dims)
         list_params_marg_2d = mathstools.empty_lists(n_dims,n_dims)
@@ -544,7 +544,7 @@ class multi_dim_dist():
             if ip != (n_dims-1):
                 pl.xticks(xticks,[])
             if iall==1:
-                pl.ylabel(labels[ip])
+                pl.ylabel(self.labels[ip])
 
             # panels in the middle
             # if (( isub % n_dims) != 1) and (isub <= n_dims*(n_dims-1) ):
@@ -560,7 +560,7 @@ class multi_dim_dist():
             # adjust_limits(y_offset_min=0,x_offset_max=0,x_offset_min=0)
 
             if isub==n_dims**2:
-                pl.xlabel(labels[ip])
+                pl.xlabel(self.labels[ip])
 
             for ic in range(ip+1,n_dims):
                 isub = ic*n_dims + ip +1
@@ -590,8 +590,8 @@ class multi_dim_dist():
 
                 # if on the left edge
                 if ( isub % n_dims) == 1:
-                    pl.ylabel(labels[ic])
-                    log.debug('ylabel isub %d %s' % (isub,labels[ic]) )
+                    pl.ylabel(self.labels[ic])
+                    log.debug('ylabel isub %d %s' % (isub,self.labels[ic]) )
 
                     # if not on the bottom
                     if (isub <= n_dims*(n_dims-1) ):
@@ -602,8 +602,8 @@ class multi_dim_dist():
 
                 # if on the bottom
                 if (isub > n_dims*(n_dims-1) ):
-                    pl.xlabel(labels[ip])
-                    log.debug('xlabel isub %d %s' % (isub,labels[ip]) )
+                    pl.xlabel(self.labels[ip])
+                    log.debug('xlabel isub %d %s' % (isub,self.labels[ip]) )
 
                     # if not on the right side
                     if ( isub % n_dims) != 1:
@@ -616,6 +616,87 @@ class multi_dim_dist():
 
 
                 # adjust_limits(y_offset_min=self.y_offset_min,x_offset_max=self.x_offset_max,x_offset_min=self.x_offset_min)
+
+    # def get_upsampled_marginal(self,X,log_prob,sum_axis):
+
+    #     n_dim = len(log_prob.shape)
+    #     n_dim_sum = len(sum_axis)
+    #     if n_dim - n_dim_sum != 2:
+    #         raise Exception('number of dimensions to remain after marginalisation shoud be two, is: n_dim=%d -n_dim_sum=%d',(n_dim,n_dim_sum))
+
+
+    #     # mega slow loops
+    #     all_dim_sizes = range(n_dim)
+    #     axis_todo = np.zeros(n_dim)
+    #     leave_axis = range(n_dim)
+    #     for sa in sum_axis:
+    #         leave_axis.remove(sa)
+    #     n_ax1 = log_prob.shape[leave_axis[0]]
+    #     n_ax2 = log_prob.shape[leave_axis[1]]
+    #     axis_todo[leave_axis[0]] = 1
+    #     axis_todo[leave_axis[1]] = 2
+
+    #     X1 = X[leave_axis[0]]
+    #     X2 = X[leave_axis[1]]
+    #     select='['
+    #     for ia in range(n_dim):
+    #         if axis_todo[ia] >0:
+    #             select += ':'
+    #         else:
+    #             select += '0'
+    #         if ia != n_dim-1:
+    #             select+=','
+    #     select+=']'
+    #     X1f = eval( 'X1'+ select)
+    #     X2f = eval( 'X2'+ select)
+
+
+    #     v1f = np.linspace(X1f.min(),X1f.max(),X1.shape[0])
+    #     v2f = np.linspace(X2f.min(),X2f.max(),X1.shape[1])
+
+    #     v1ff = np.linspace(X1f.min(),X1f.max(),self.n_upsample*X1.shape[0])
+    #     v2ff = np.linspace(X2f.min(),X2f.max(),self.n_upsample*X1.shape[1])
+
+    #     X1ff , X2ff = np.meshgrid(v1f,v2f ,ordering='ij')
+    #     X1ff = X1ff.T
+    #     X2ff = X2ff.T
+
+    #     for i1 in range(n_ax1):
+    #         for i2 in range(n_ax2):
+    #             select = 'log_prob['
+    #             for ia in range(n_dim):
+    #                 if axis_todo[ia] == 1:
+    #                     select += '%d' % i1
+    #                 elif axis_todo[ia] == 2:
+    #                     select += '%d' % i2
+    #                 else:
+    #                     select += ':'
+    #                 if ia != n_dim-1:
+    #                     select+=','
+    #             select+=']'
+    #             # print select
+    #         Yf=eval(select)
+    #         prob_lores = mathstools.normalise(Yf)
+    #         import scipy.interpolate
+    #         import pdb; pdb.set_trace()
+    #         Fff = scipy.interpolate.interp2d(v1f,v2f,Yf)
+    #         Yff = Fff(v1ff,v2ff)
+    #         prob_hires = mathstools.normalise(Yff)
+
+    #         pl.pcolormesh(X1f,X2f,Yf)
+    #         pl.pcolormesh(X1ff,X2ff,Yff)
+    #         pl.show()
+
+
+
+
+
+
+    #     import pdb; pdb.set_trace()
+
+
+
+
 
 
 def get_plot_bar_data(x,y):
@@ -657,7 +738,8 @@ def plot_dist_meshgrid(X,y,labels='def',contour=False,colormesh=True,scatter=Fal
     mdd.contourf=contourf
     mdd.colormesh=colormesh
     mdd.scatter=scatter
-    mdd.plot_dist_meshgrid(X,y,labels)
+    mdd.labels=labels
+    mdd.plot_dist_meshgrid(X,y)
 
 if __name__ == '__main__':
 

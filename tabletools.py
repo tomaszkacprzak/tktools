@@ -15,6 +15,17 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 default_log.propagate = False
 
+def ensureColumn(rec,name,dtype='f8',arr=None):
+
+    import numpy as np
+    if arr==None:
+        arr = np.zeros(len(rec))
+
+    if name not in rec.dtype.names:
+        rec = appendColumn(arr=arr,name=name,rec=rec,dtype=dtype)
+    return rec
+
+
 def setLog(log):
 
     logging_levels_int = { 0: logging.CRITICAL, 
