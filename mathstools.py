@@ -184,16 +184,19 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
     # normalise
     pdf_norm = sum(pdf.flatten())
     pdf = pdf/pdf_norm
+    # pdf=np.log(pdf)
 
     max_pdf = max(pdf.flatten())
     min_pdf = 0.
 
-    n_grid_prob = 2000
+    n_grid_prob = 1e2
     grid_prob = np.linspace(min_pdf,max_pdf,n_grid_prob)
+    grid_prob_hires = np.linspace(min_pdf,max_pdf,n_grid_prob*1e5)
+    log.debug('confidence interval grid dx %1.4e' , grid_prob_hires[1]-grid_prob_hires[0])
 
     list_levels = [] 
-    conf_tol = 0.001
     diff = np.zeros(len(grid_prob))
+    # pl.figure()
     for sig in list_sigmas:
 
         confidence_level = scipy.special.erf( float(sig) / np.sqrt(2.) )
@@ -201,15 +204,24 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
         log.debug('confindence %d sigmas %5.5f', sig, confidence_level)
         for il, lvl in enumerate(grid_prob):
             mass = sum(pdf[pdf > lvl]) 
-            diff[il] = np.abs(confidence_level - mass) 
+            diff[il] = np.abs(mass) 
             # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
-        
-        ib = diff.argmin()
-        vb = grid_prob[ib]
-        list_levels.append(vb)
-        
-        log.debug('confindence %5.5f level %5.5f/%5.5f at %5.2f', confidence_level, vb,max_pdf, float(ib)/float(n_grid_prob))
 
+        import scipy.interpolate
+        f_interp=scipy.interpolate.interp1d(grid_prob,diff,'cubic')
+        diff_hires=np.abs(f_interp(grid_prob_hires))
+       
+        ib = np.abs(diff_hires - confidence_level).argmin()
+        vb = grid_prob_hires[ib]
+        list_levels.append(vb)
+
+        # pl.plot(grid_prob,diff,'rx')
+        # pl.plot(grid_prob_hires,diff_hires,'b')
+        # pl.axvline(grid_prob_hires[ib])
+        
+        log.debug('confindence %2.2f sigmas %5.5e level %5.5e/%5.5e', sig, confidence_level, vb,max_pdf)
+
+    # pl.show()
     return list_levels , list_sigmas
 
 

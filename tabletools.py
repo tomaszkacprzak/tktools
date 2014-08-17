@@ -15,6 +15,11 @@ stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 default_log.propagate = False
 
+def fixCase(arr):
+
+    arr.dtype.names = [n.lower() for n in arr.dtype.names]
+
+
 def ensureColumn(rec,name,dtype='f8',arr=None):
 
     import numpy as np
@@ -23,6 +28,8 @@ def ensureColumn(rec,name,dtype='f8',arr=None):
 
     if name not in rec.dtype.names:
         rec = appendColumn(arr=arr,name=name,rec=rec,dtype=dtype)
+    else:
+        rec[name] = arr
     return rec
 
 

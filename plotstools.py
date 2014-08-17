@@ -492,9 +492,27 @@ class multi_dim_dist():
 
     def plot_dist_meshgrid(self,X,y):
 
+        checked_all = False
+        while checked_all == False:
+            for di in range(len(X)):
+                if y.shape[di]==1:          
+                    y = np.squeeze(y,di)
+                    X.pop(di)
+                    for pi in range(len(X)):
+                        X[pi] = np.squeeze(X[pi],di)
+                    log.info('squeezed dimension %d' % di)
+                    break
+                checked_all=True
+
+
+
+
         n_dims = len(X)
         shape_list = np.array([x for x in X[0].shape])
         if self.labels=='def':  self.labels = ['param %d ' % ind for ind in range(n_dims)]
+
+        # squeeze unused dimensions
+
 
         list_prob_marg_2d = mathstools.empty_lists(n_dims,n_dims)
         list_params_marg_2d = mathstools.empty_lists(n_dims,n_dims)
