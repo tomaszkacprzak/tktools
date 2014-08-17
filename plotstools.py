@@ -205,6 +205,7 @@ class multi_dim_dist():
 
     def __init__(self):
     
+        self.n_upsample = 0    
         self.n_contours = 20
         self.y_offset_min = 0
         self.x_offset_max = 0
@@ -590,6 +591,21 @@ class multi_dim_dist():
                 Xi = list_params_marg_2d[ip][ic][0]
                 Yi = list_params_marg_2d[ip][ic][1]
                 Zi = list_prob_marg_2d[ip][ic]
+
+                # if self.n_upsample > 1:
+
+                #     x_lores = np.linspace(Xi.min(),Xi.max(),Xi.shape[0])
+                #     y_lores = np.linspace(Yi.min(),Yi.max(),Yi.shape[1])
+                #     x_hires = np.linspace(Xi.min(),Xi.max(),Xi.shape[0]*self.n_upsample)
+                #     y_hires = np.linspace(Yi.min(),Yi.max(),Yi.shape[1]*self.n_upsample)
+                #     Xi_hires , Yi_hires = np.meshgrid(x_hires,y_hires,indexing='ij')
+                #     import scipy.interpolate
+                #     finterp = scipy.interpolate.interp2d(x_lores,y_lores,Zi,'cubic')
+                #     Zi_hires = finterp(x_hires,y_hires).T
+                #     Zi = Zi_hires
+                #     Xi = Xi_hires
+                #     Yi = Yi_hires
+
                     
                 if self.contourf:
                     pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues 
