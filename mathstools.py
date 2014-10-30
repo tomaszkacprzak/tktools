@@ -1,4 +1,4 @@
-import logging, sys, plotstools
+import logging, sys, plotstools, warnings
 import pylab as pl
 import numpy as np
 
@@ -155,22 +155,93 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
     sig1_level = list_levels[0]
 
     diff = abs(pdf-sig1_level)
-    ix1,ix2 = diff.argsort()[:2]
-    par_x1 , par_x2 = par[ix1] , par[ix2]
-    sig_point_lo = min([par_x1,par_x2])
-    sig_point_hi = max([par_x1,par_x2])
+    ix = diff.argsort()
+    par_lo = par[ix]
+    par_hi = par[ix]
+    sig_point_lo = par_lo[par_lo<max_par][0]
+    sig_point_hi = par_hi[par_hi>max_par][0]
     err_hi = sig_point_hi - max_par
     err_lo = max_par - sig_point_lo 
     # if both are on the same side
     if (err_hi > 0) and (err_lo < 0):
+
+        import pdb; pdb.set_trace()
         err_lo = err_hi
         # more options should be implemented here when needed
+        warnings.warn('err_lo=err_hi')
 
     if plot:
         pl.plot(par,pdf,'x-')
         pl.axvline(x=max_par,linewidth=1, color='c')
         pl.axvline(x=max_par - err_lo,linewidth=1, color='r')
         pl.axvline(x=max_par + err_hi,linewidth=1, color='r')
+
+    log.debug('max %5.5f +%5.5f -%5.5f', max_par, err_hi , err_lo)
+
+    return  max_par , err_hi , err_lo
+
+
+def estimate_confidence_interval_reflect(par_orig,pdf_orig,plot=False):
+    import scipy
+    import scipy.interpolate
+
+
+    # upsample PDF
+    n_upsample = 10000
+    f = scipy.interpolate.interp1d(par_orig,pdf_orig)
+    par = np.linspace(min(par_orig),max(par_orig),n_upsample) 
+    pdf = f(par)
+    pdf /= np.sum(pdf)
+
+    sig = 1
+    confidence_level = scipy.special.erf( float(sig) / np.sqrt(2.) )
+
+    pdf_norm = sum(pdf.flatten())
+    pdf = pdf/pdf_norm
+
+    max_pdf = max(pdf.flatten())
+    min_pdf = 0.
+
+    max_par = par[pdf.argmax()]
+
+    # higher errorbar
+    pdf_hi = pdf[pdf.argmax():]
+    pdf_hi = np.concatenate([pdf_hi[::-1],pdf_hi])
+    par_hi = par[pdf.argmax():] - par[pdf.argmax()]
+    par_hi = np.concatenate([ -par_hi[::-1], par_hi ])
+    pdf_hi /= np.sum(pdf_hi)
+    
+    # lower errorbar
+    pdf_lo = pdf[:pdf.argmax()]
+    pdf_lo = np.concatenate([pdf_lo,pdf_lo[::-1]])
+    par_lo = par[:pdf.argmax()]
+    par_lo = np.concatenate([ -par_lo[::-1], par_lo ])
+    pdf_lo /= np.sum(pdf_lo)
+    
+    list_levels , _ = get_sigma_contours_levels(pdf_hi,list_sigmas=[1])
+    sig1_level = list_levels[0]
+    diff = abs(pdf_hi-sig1_level)
+    ix = diff.argmin()
+    err_hi = np.abs(par_hi[ix])
+    
+    list_levels , _ = get_sigma_contours_levels(pdf_lo,list_sigmas=[1])
+    sig1_level = list_levels[0]
+    diff = abs(pdf_lo-sig1_level)
+    ix = diff.argmin()
+    err_lo = np.abs(par_lo[ix])
+
+
+    
+    if plot:
+        pl.figure(); 
+        pl.plot(par_lo,pdf_lo); 
+        pl.axvline(err_lo)
+        pl.axvline(-err_lo)
+        
+        pl.figure();
+        pl.plot(par_hi,pdf_hi);
+        pl.axvline(err_hi)
+        pl.axvline(-err_hi)
 
     log.debug('max %5.5f +%5.5f -%5.5f', max_par, err_hi , err_lo)
 

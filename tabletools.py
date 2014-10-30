@@ -362,5 +362,11 @@ def appendColumn(rec, name, arr, dtype=None):
 def array2recarray(myarray,dtype):
 
     import numpy
-    newrecarray = numpy.core.records.fromarrays(myarray.transpose(), dtype=dtype)
+    newrecarray = numpy.core.records.fromarrays(numpy.array(myarray).transpose(), dtype=dtype)
+    return newrecarray
+
+def arr2rec(myarray,dtype):
+
+    import numpy
+    newrecarray = numpy.core.records.fromarrays(numpy.array(myarray).transpose(), dtype=dtype)
     return newrecarray
