@@ -91,6 +91,10 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
                     table = table.array
                     import numpy
                     table = numpy.asarray(table)
+        elif filepath.split('.')[-1] == 'h5' or filepath.split('.')[-1] == 'hdf5':
+
+                raise Exception('h5 hot implemented')
+
         else:
                 import numpy
                 table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
@@ -130,7 +134,7 @@ def add_col(rec, name, arr='zeros', dtype=None):
     newrec[name] = arr
     return newrec
 
-def arr_to_rec(myarray,dtype):
+def arr2rec(myarray,dtype):
 
     import numpy
     newrecarray = numpy.core.records.fromarrays(numpy.array(myarray).transpose(), dtype=dtype)

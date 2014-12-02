@@ -126,14 +126,14 @@ def get_midpoint( halo1_ra , halo1_de , halo2_ra , halo2_de , unit='rad' ):
 
     return mid_ra, mid_de
 
-def deg_to_rad(ra_deg,de_deg):
+def deg2rad(ra_deg,de_deg):
 
     ra_rad = ra_deg*np.pi/180.
     de_rad = de_deg*np.pi/180.    
 
     return ra_rad,de_rad
 
-def rad_to_deg(ra_rad,de_rad):
+def rad2deg(ra_rad,de_rad):
 
     ra_deg = ra_rad * 180. / np.pi
     de_deg = de_rad * 180. / np.pi
@@ -141,34 +141,34 @@ def rad_to_deg(ra_rad,de_rad):
     return ra_deg , de_deg
 
 
-def arcsec_to_deg(ra_arcsec,de_arcsec):
+def arcsec2deg(ra_arcsec,de_arcsec):
 
     return ra_arcsec/3600. , de_arcsec/3600.
 
-def deg_to_arcsec(ra_deg,de_deg):
+def deg2arcsec(ra_deg,de_deg):
 
     return ra_deg*3600, de_deg*3600
 
-def deg_to_arcmin(ra_deg,de_deg):
+def deg2arcmin(ra_deg,de_deg):
 
     return ra_deg*60, de_deg*60
 
 
-def rad_to_arcsec(ra_rad,de_rad):
+def rad2arcsec(ra_rad,de_rad):
 
     ra_arcsec = ra_rad/np.pi*180*3600. 
     de_arcsec = de_rad/np.pi*180*3600.
 
     return ra_arcsec , de_arcsec
 
-def arcmin_to_rad(ra_arcmin,de_arcmin):
+def arcmin2rad(ra_arcmin,de_arcmin):
 
     ra_rad = ra_arcmin*np.pi/180/60. 
     de_rad = de_arcmin*np.pi/180/60. 
 
     return ra_rad , de_rad
 
-def rad_to_arcmin(ra_rad,de_rad):
+def rad2arcmin(ra_rad,de_rad):
 
     ra_arcmin = ra_rad/np.pi*180*60. 
     de_arcmin = de_rad/np.pi*180*60.
