@@ -12,6 +12,9 @@ default_logger.propagate = False
 
 def set_logger(arg_logger):
 
+    # set to default level
+    default_logger.setLevel(logging.INFO)
+
     logging_levels_int = { 0: logging.CRITICAL, 
                            1: logging.ERROR,
                            2: logging.WARNING,
@@ -50,17 +53,30 @@ def set_logger(arg_logger):
 def save(filepath,arr,clobber=False,logger=default_logger):
 
     logger = set_logger(logger)
-
     import pyfits
     if filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
         import pyfits, warnings, os
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
+            exists = os.path.isfile(filepath)
             pyfits.writeto(filepath,arr,clobber=clobber)
-            if os.path.isfile(filepath):
+            if exists:
                 logger.info('overwriting %s with %d rows',filepath,len(arr))
             else:
                 logger.info('saved %s with %d rows',filepath,len(arr))
+    elif filepath.split('.')[-1] == 'cpickle':
+        import cPickle as pickle
+        import os
+        if os.path.isfile(filepath):
+            if clobber==False:
+                raise Exception('file exists %s' % filename)
+            else:
+                pickle.dump(arr,open(filepath,'w'),protocol=2)
+                logger.info('overwrite pickle %s',filepath)
+        else:
+            pickle.dump(arr,open(filepath,'w'),protocol=2)
+            logger.info('wrote new pickle %s',filepath)
+
 
 def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skiprows=0):
 
@@ -74,11 +90,12 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
     else:
 
         logger.debug('loading %s' % filepath)
-        if filepath.split('.')[-1] == 'pp':
+        if filepath.split('.')[-1] == 'pp' or filepath.split('.')[-1] == 'cpickle' or filepath.split('.')[-1] == 'pp2':
                 import cPickle as pickle
                 file_pickle = open(filepath)
                 table = pickle.load(file_pickle)
                 file_pickle.close()
+                logger.info('loaded pickle %s' % (filepath))
 
         elif filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
                 import pyfits
@@ -91,16 +108,15 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
                     table = table.array
                     import numpy
                     table = numpy.asarray(table)
+                logger.info('loaded %s, got %d rows' % (filepath,len(table)))
         elif filepath.split('.')[-1] == 'h5' or filepath.split('.')[-1] == 'hdf5':
 
                 raise Exception('h5 hot implemented')
 
         else:
                 import numpy
-                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
-        
-    
-    logger.info('loaded %s correctly, got %d rows' % (filepath,len(table)))
+                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)  
+                logger.info('loaded %s, got %d rows' % (filepath,len(table)))
 
     if remember: loaded_tables[filepath] = table
 
