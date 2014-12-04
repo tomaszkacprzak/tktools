@@ -50,29 +50,48 @@ def set_logger(arg_logger):
 
     return logger
     
-def save(filepath,arr,clobber=False,logger=default_logger):
+def save(filepath,arr,clobber='false',logger=default_logger):
 
     logger = set_logger(logger)
+    if clobber==False: clobber='false'
+    if clobber==True: clobber='true'
+
+
     import pyfits
     if filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
         import pyfits, warnings, os
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             exists = os.path.isfile(filepath)
-            pyfits.writeto(filepath,arr,clobber=clobber)
             if exists:
-                logger.info('overwriting %s with %d rows',filepath,len(arr))
+                if clobber.lower()=='skip':
+                    logger.info('file exists: %s, skipping ... (%d rows)',filepath,len(arr))
+                    return 
+                elif clobber.lower()=='false':
+                    raise Exception('file exists %s' % filename)
+                elif clobber.lower()=='true':
+                    pyfits.writeto(filepath,arr,clobber=True)
+                    logger.info('overwriting %s with %d rows',filepath,len(arr))            
+                else:
+                    raise Exception('unknown clobber option %s, choose from (true,false,skip)' % clobber )
             else:
+                pyfits.writeto(filepath,arr,clobber=False)
                 logger.info('saved %s with %d rows',filepath,len(arr))
+
     elif filepath.split('.')[-1] == 'cpickle':
         import cPickle as pickle
         import os
         if os.path.isfile(filepath):
-            if clobber==False:
+            if clobber.lower()=='skip':
+                logger.info('file exists: %s, skipping ...' % filename)
+                return
+            elif clobber.lower()=='false':
                 raise Exception('file exists %s' % filename)
-            else:
+            elif clobber.lower()=='true':
                 pickle.dump(arr,open(filepath,'w'),protocol=2)
                 logger.info('overwrite pickle %s',filepath)
+            else:
+                raise Exception('unknown clobber option %s, choose from (true,false,skip)' % clobber )
         else:
             pickle.dump(arr,open(filepath,'w'),protocol=2)
             logger.info('wrote new pickle %s',filepath)
