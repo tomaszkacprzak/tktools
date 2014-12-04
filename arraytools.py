@@ -68,7 +68,7 @@ def save(filepath,arr,clobber='false',logger=default_logger):
                     logger.info('file exists: %s, skipping ... (%d rows)',filepath,len(arr))
                     return 
                 elif clobber.lower()=='false':
-                    raise Exception('file exists %s' % filename)
+                    raise Exception('file exists %s' % filepath)
                 elif clobber.lower()=='true':
                     pyfits.writeto(filepath,arr,clobber=True)
                     logger.info('overwriting %s with %d rows',filepath,len(arr))            
@@ -83,10 +83,10 @@ def save(filepath,arr,clobber='false',logger=default_logger):
         import os
         if os.path.isfile(filepath):
             if clobber.lower()=='skip':
-                logger.info('file exists: %s, skipping ...' % filename)
+                logger.info('file exists: %s, skipping ...' % filepath)
                 return
             elif clobber.lower()=='false':
-                raise Exception('file exists %s' % filename)
+                raise Exception('file exists %s' % filepath)
             elif clobber.lower()=='true':
                 pickle.dump(arr,open(filepath,'w'),protocol=2)
                 logger.info('overwrite pickle %s',filepath)
