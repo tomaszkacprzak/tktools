@@ -1,7 +1,4 @@
 import logging, sys
-
-loaded_tables = {}
-
 default_logger = logging.getLogger("arraytools") 
 default_logger.setLevel(logging.INFO)  
 log_formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s   %(message)s ","%Y-%m-%d %H:%M:%S")
@@ -9,6 +6,9 @@ stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 default_logger.addHandler(stream_handler)
 default_logger.propagate = False
+import warnings; warnings.simplefilter("once")
+
+loaded_tables = {}
 
 def set_logger(arg_logger):
 
@@ -49,6 +49,20 @@ def set_logger(arg_logger):
         logger = arg_logger
 
     return logger
+
+def open_file(filepath, mode='r', compression='none'):
+
+    if compression=='none':
+        f = open(filepath, mode)
+    elif compression=='bzip2':
+        import bz2
+        f = bz2.BZ2File(filepath, mode)
+        warnings.warn('using compression %s' % compression)
+    else:
+        raise Exception('requested compression %s not implemented', compression)
+
+
+    return f
     
 def save(filepath,arr,clobber='false',logger=default_logger):
 
@@ -78,7 +92,13 @@ def save(filepath,arr,clobber='false',logger=default_logger):
                 pyfits.writeto(filepath,arr,clobber=False)
                 logger.info('saved %s with %d rows',filepath,len(arr))
 
-    elif filepath.split('.')[-1] == 'cpickle':
+    elif (filepath.split('.')[-1] == 'cpickle') | (filepath.split('.')[-2] == 'cpickle'):
+
+        if filepath.split('.')[-1]=='bz2':
+            compression = 'bzip2'
+        else:
+            compression = 'none'
+
         import cPickle as pickle
         import os
         if os.path.isfile(filepath):
@@ -88,18 +108,23 @@ def save(filepath,arr,clobber='false',logger=default_logger):
             elif clobber.lower()=='false':
                 raise Exception('file exists %s' % filepath)
             elif clobber.lower()=='true':
-                pickle.dump(arr,open(filepath,'w'),protocol=2)
+                pickle.dump(arr,open_file(filepath, 'w', compression),protocol=2)
                 logger.info('overwrite pickle %s',filepath)
             else:
                 raise Exception('unknown clobber option %s, choose from (true,false,skip)' % clobber )
         else:
-            pickle.dump(arr,open(filepath,'w'),protocol=2)
+            pickle.dump(arr, open_file(filepath, 'w', compression),protocol=2)
             logger.info('wrote new pickle %s',filepath)
 
 
 def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skiprows=0):
 
     logger = set_logger(logger)
+
+    if filepath.split('.')[-1]=='bz2':
+        compression = 'bzip2'
+    else:
+        compression = 'none'
 
     if (filepath in loaded_tables) and remember:
 
@@ -109,9 +134,16 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
     else:
 
         logger.debug('loading %s' % filepath)
-        if filepath.split('.')[-1] == 'pp' or filepath.split('.')[-1] == 'cpickle' or filepath.split('.')[-1] == 'pp2':
+
+        if len(filepath.split('.'))==0:
+
+                import numpy
+                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)  
+                logger.info('loaded %s, got %d rows' % (filepath,len(table)))            
+
+        elif filepath.split('.')[-1] == 'pp' or filepath.split('.')[-1] == 'cpickle' or filepath.split('.')[-1] == 'pp2' or filepath.split('.')[-2] == 'cpickle':
                 import cPickle as pickle
-                file_pickle = open(filepath)
+                file_pickle = open_file(filepath,compression=compression)
                 table = pickle.load(file_pickle)
                 file_pickle.close()
                 logger.info('loaded pickle %s' % (filepath))
