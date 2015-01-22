@@ -12,6 +12,37 @@ default_log.addHandler(stream_handler)
 log = default_log
 log.propagate = False
 
+def search_unsorted(sub_set,full_set):
+    """
+    @param full_set - an array of ints
+    @param sub_set - an array of ints, all of ints in sub_set can be found in full_set
+    @return indices of sub_set in full_set
+    """
+    l1 = sub_set
+    l2 = full_set
+
+    if len(l1)==0:
+        raise Exception('sub_set empty')
+    if len(l2)==0:
+        raise Exception('full_set empty')
+
+    a1 = np.argsort(sub_set)
+    a2 = np.argsort(full_set)
+    aa1 = np.argsort(a1)
+
+    s1 = l1[a1]
+    s2 = l2[a2]
+
+    union12 = np.union1d(s2,s1)
+    if len(union12) > len(s2):
+        raise Exception('some of requested ids are not in the catalog' )
+
+    ss = np.searchsorted(s2,s1)
+    return a2[ss][aa1]
+
+
+
+
 def get_bin_membership_matrix(x,bin_edges):
 
     digitized = np.array(np.digitize(x,bins=bin_edges)) -1
