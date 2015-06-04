@@ -12,6 +12,37 @@ default_log.addHandler(stream_handler)
 log = default_log
 log.propagate = False
 
+def even_bins(x,n_split=10,bins=10,show_plots=False):
+
+    hh,bb = np.histogram(x,bins=bins)
+    hh_norm= hh / float(np.sum(hh))
+    hh = hh_norm
+    cc = np.cumsum(hh)
+    cc = np.concatenate([np.zeros(1),cc])
+
+    import scipy.interpolate
+
+    ff = scipy.interpolate.interp1d(cc,bb)
+    spp = np.linspace(0,1,n_split)
+    bins_edges = ff(spp)
+
+    if show_plots:
+        pl.figure()
+        pl.plot(bb,cc)
+        # for ib,vb in enumerate(bins_edges):        pl.axvline(ib); pl.axhline(spp[ib])
+        pl.xticks(bins_edges)
+        pl.yticks(spp)
+        pl.grid()
+        # pl.xscale('log')
+
+        pl.figure()
+        pl.plot(cc,bb)
+        pl.show()
+
+    return bins_edges
+
+
+
 def search_unsorted(sub_set,full_set):
     """
     @param full_set - an array of ints

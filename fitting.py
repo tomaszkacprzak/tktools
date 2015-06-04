@@ -22,9 +22,14 @@ def polynomialCustomBasis(x):
 
 
 
-def fit(x,y,s="none",expand=linearBasis,empirical_errors=False):
+
+def fit(x,y,s="none",expand=linearBasis,empirical_errors=False,unit_box=False,invert_x=False,eps=1e-40):
 
 	(x,y,s) = checkDimsData(x,y,s)
+
+	if unit_box==True:
+		x_nobox = x.copy()
+		x, min_x, max_x_kron = to_unit_box(x,invert_x)
 
 	X=expand(x)
 	n_dims_X=X.shape[1]
@@ -57,14 +62,119 @@ def fit(x,y,s="none",expand=linearBasis,empirical_errors=False):
 		(w,C) = fit(x,y,std_diff,empirical_errors=False)
 		
 		#pdb.set_trace()
-		
+	
+
 	
 	return (w,C)
+
+
+def to_unit_box(x,invert_x):
+
+	# min(x)=0
+	# max(x)=1
+
+	x_nobox = x.copy()
+	min_x = np.min(x,axis=0)
+	x = x-min_x
+
+	max_x = np.max(x,axis=0)
+	max_x_kron = np.kron(max_x,np.ones([x.shape[0],1]))
+
+	x /= max_x_kron
+
+
+	return x, min_x, max_x
+
+
+def fit2(x,y,s="none",expand=linearBasis,empirical_errors=False,invert_x=False):
+
+	(x,y,s) = checkDimsData(x,y,s)
+
+	x_nobox = x.copy()
+	x, min_x, max_x = to_unit_box(x,invert_x)
+
+	X=expand(x)
+	n_dims_X=X.shape[1]
+
+	ys=y/s
+	Xs=X/kron(ones((n_dims_X,1)),s).T
+
+	XX = dot(Xs.T,Xs) + eps*identity(n_dims_X)
+	Xy = dot(Xs.T,ys)
+
+	C = linalg.inv(XX)
+
+	w = dot(C,Xy)
+	
+	warnings.warn("Uncertainties estimates are uncertain! Require more testing.")
+	
+	if empirical_errors:
+		
+		system_spec = checkDimsBasis(x,w,expand)
+		if system_spec <= 0:
+			warnings.warn("Underdetermined or square system, empirical errors are meaningless.")
+		
+		warnings.warn("Using empirical errors, assuming that all errorbars are of similar value.")
+		
+		(p,_) = predict(x,w,C)
+			
+		std_diff = ones(p.shape)*std(p-y,ddof=1)
+		
+		# repeat with updated standard deviations
+		(w,C) = fit(x,y,std_diff,empirical_errors=False)
+		
+		#pdb.set_trace()
+	
+	fitdata = {}	
+	fitdata['min_x'] = min_x
+	fitdata['max_x'] = max_x
+	fitdata['invert_x'] = invert_x
+	fitdata['expand'] = expand
+	fitdata['w'] = w
+	fitdata['C'] = C
+	
+	return fitdata
+
+def predict2(x,fitdata):
+
+	x_nobox = x.copy()
+
+	expand = fitdata['expand']
+	w = fitdata['w']
+	C = fitdata['C']
+
+	x=checkDimsX(x)
+	checkDimsBasis(x,w,expand)
+
+	x = x-fitdata['min_x']
+	max_x_kron = np.kron(fitdata['max_x'],np.ones([x.shape[0],1]))
+	x /= max_x_kron
+	
+	X=expand(x)
+	n_dims_X = X.shape[1]
+	n_dims_w = w.shape[0]
+	n_points_x = x.shape[0]
+
+	p = dot(X,w)
+	s = zeros(n_points_x)
+	
+	for ip in range(n_points_x):
+		
+		iX = X[ip,:]
+		XX= outer(iX,iX)
+					
+		s[ip] = sum(sum(XX*C))
+		
+	warnings.warn("Uncertainties estimates are uncertain! Require more testing.")
+		
+
+	return (p,s)
+
 
 def predict(x,w,C,expand=linearBasis):
 
 	x=checkDimsX(x)
-	checkDimsBasis(x,w,expand)
+	# checkDimsBasis(x,w,expand)
 	
 	X=expand(x)
 	n_dims_X = X.shape[1]

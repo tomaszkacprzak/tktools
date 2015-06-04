@@ -117,6 +117,7 @@ def loadTable(filepath,remember=False,dtype=None,hdu=None,log=default_log,skipro
                     table = numpy.asarray(table)
         else:
                 import numpy
+                import pdb; pdb.set_trace()
                 table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
         
     
