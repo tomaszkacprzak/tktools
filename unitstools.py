@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 def to_radians(x,unit='deg'):
 
@@ -40,7 +41,10 @@ def get_gnomonic_projection(ra, de , ra_center, de_center, unit='rad'):
 
     return x,y
 
-def get_gnomonic_projection_shear(ra_rad, de_rad , ra_center_rad, de_center_rad, shear_g1 , shear_g2):
+def get_gnomonic_projection_shear(ra, de , ra_center, de_center, shear_g1 , shear_g2, unit='rad'):
+
+    ra_rad, de_rad = to_radians(ra,unit=unit),  to_radians(de,unit=unit)
+    ra_center_rad, de_center_rad = to_radians(ra_center,unit=unit), to_radians(de_center,unit=unit)
 
     # code from Jospeh
     # Here use a tangent plane to transform the sources' shear
@@ -73,6 +77,38 @@ def get_gnomonic_projection_shear(ra_rad, de_rad , ra_center_rad, de_center_rad,
     gam2 = temp.imag
 
     return gam1 , gam2
+
+def get_inverse_gnomonic_projection(x,y,ra_center, de_center):  
+    
+    x_rad,y_rad = to_radians(x), to_radians(y)
+    ra_center_rad, de_center_rad = to_radians(ra_center), to_radians(de_center)
+    # http://mathworld.wolfram.com/GnomonicProjection.html
+    # phi = dec
+     # lambda = ra
+    rho = np.sqrt( x_rad**2 + y_rad**2)
+    c = np.arctan(rho)
+    gamma = (y_rad*np.sin(c)*np.cos(de_center_rad))/(rho)
+    if not np.isfinite(gamma): 
+        warnings.warn( 'get_inverse_gnomonic_projection may be numerically unstable' )
+        gamma = 0
+    de_rad = np.arcsin( np.cos(c)*np.sin(de_center_rad) + gamma )
+    ra_rad = ra_center_rad + np.arctan( (x_rad*np.sin(c))/(rho*np.cos(de_center_rad)*np.cos(c) - y_rad*np.sin(de_center_rad)*np.sin(c)) )
+    ra,de = from_radians(ra_rad),from_radians(de_rad)
+    return ra,de
+
+
+
+#     The inverse transformation equations are
+
+# phi =   sin^(-1)(coscsinphi_1+(ysinccosphi_1)/rho)  
+# (4)
+# lambda  =   lambda_0+tan^(-1)((xsinc)/(rhocosphi_1cosc-ysinphi_1sinc)), 
+# (5)
+# where
+
+# rho =   sqrt(x^2+y^2)   
+# (6)
+# c   =   tan^(-1)rho
 
 
 
