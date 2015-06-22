@@ -32,8 +32,11 @@ def get_gnomonic_projection(ra, de , ra_center, de_center, unit='rad'):
     ra_rad , de_rad = to_radians(ra,unit=unit), to_radians(de,unit=unit)
     ra_center_rad , de_center_rad = to_radians(ra_center,unit=unit), to_radians(de_center,unit=unit)
 
-    cos_c = np.sin(de_center_rad)*np.sin(de_rad) + np.cos(de_center_rad) * np.cos(de_rad) * np.cos(ra_rad  - ra_center_rad)
+    cos_c = np.sin(de_center_rad)*np.sin(de_rad) + np.cos(de_center_rad) * np.cos(de_rad) * np.cos(ra_rad-ra_center_rad)
+    
     x_rad = np.cos(de_rad)*np.sin(ra_rad - ra_center_rad)
+    x_rad = x_rad/cos_c
+
     y_rad = np.cos(de_center_rad) * np.sin(de_rad) - np.sin(de_center_rad)*np.cos(de_rad)*np.cos(ra_rad-ra_center_rad) 
     y_rad = y_rad/cos_c
 
