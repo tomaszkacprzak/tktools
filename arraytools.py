@@ -1,6 +1,6 @@
 import logging, sys
-default_logger = logging.getLogger("arraytools") 
-default_logger.setLevel(logging.INFO)  
+default_logger = logging.getLogger("arraytools")
+default_logger.setLevel(logging.INFO)
 log_formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s   %(message)s ","%Y-%m-%d %H:%M:%S")
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
@@ -15,13 +15,13 @@ def set_logger(arg_logger):
     # set to default level
     default_logger.setLevel(logging.INFO)
 
-    logging_levels_int = { 0: logging.CRITICAL, 
+    logging_levels_int = { 0: logging.CRITICAL,
                            1: logging.ERROR,
                            2: logging.WARNING,
                            3: logging.INFO,
                            4: logging.DEBUG }
 
-    logging_levels_str = { 'critical' : logging.CRITICAL, 
+    logging_levels_str = { 'critical' : logging.CRITICAL,
                            'error' : logging.ERROR,
                            'warning' : logging.WARNING,
                            'info' : logging.INFO,
@@ -37,13 +37,13 @@ def set_logger(arg_logger):
                 default_logger.setLevel(logging_levels_int[arg_logger])
                 logger = default_logger
         except:
-            raise Exception('Unknow log level %d' % arg_logger) 
+            raise Exception('Unknow log level %d' % arg_logger)
     elif type(arg_logger) == str:
         try:
             default_logger.setLevel(logging_levels_str[arg_logger])
             logger = default_logger
         except:
-            raise Exception('Unknow log level %s' % arg_logger) 
+            raise Exception('Unknow log level %s' % arg_logger)
     elif type(arg_logger) == type(default_logger):
 
         logger = arg_logger
@@ -63,15 +63,13 @@ def open_file(filepath, mode='r', compression='none'):
 
 
     return f
-    
+
 def save(filepath,arr,clobber='false',logger=default_logger):
 
     logger = set_logger(logger)
     if clobber==False: clobber='false'
     if clobber==True: clobber='true'
 
-
-    import pyfits
     if filepath.split('.')[-1] == 'fits' or filepath.split('.')[-1] == 'fit' or filepath.split('.')[-2] == 'fits' or filepath.split('.')[-2] == 'fit':
         import pyfits, warnings, os
         with warnings.catch_warnings():
@@ -80,12 +78,12 @@ def save(filepath,arr,clobber='false',logger=default_logger):
             if exists:
                 if clobber.lower()=='skip':
                     logger.info('file exists: %s, skipping ... (%d rows)',filepath,len(arr))
-                    return 
+                    return
                 elif clobber.lower()=='false':
                     raise Exception('file exists %s' % filepath)
                 elif clobber.lower()=='true':
                     pyfits.writeto(filepath,arr,clobber=True)
-                    logger.info('overwriting %s with %d rows',filepath,len(arr))            
+                    logger.info('overwriting %s with %d rows',filepath,len(arr))
                 else:
                     raise Exception('unknown clobber option %s, choose from (true,false,skip)' % clobber )
             else:
@@ -130,7 +128,7 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
 
         logger.debug('using preloaded array %s' % filepath)
         table = loaded_tables[filepath]
-    
+
     else:
 
         logger.debug('loading %s' % filepath)
@@ -138,8 +136,8 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
         if len(filepath.split('.'))==0:
 
                 import numpy
-                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)  
-                logger.info('loaded %s, got %d rows' % (filepath,len(table)))            
+                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
+                logger.info('loaded %s, got %d rows' % (filepath,len(table)))
 
         elif filepath.split('.')[-1] == 'pp' or filepath.split('.')[-1] == 'cpickle' or filepath.split('.')[-1] == 'pp2' or filepath.split('.')[-2] == 'cpickle':
                 import cPickle as pickle
@@ -166,7 +164,7 @@ def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skipr
 
         else:
                 import numpy
-                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)  
+                table = numpy.loadtxt(filepath,dtype=dtype,skiprows=skiprows)
                 logger.info('loaded %s, got %d rows' % (filepath,len(table)))
 
     if remember: loaded_tables[filepath] = table
