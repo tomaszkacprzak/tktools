@@ -114,6 +114,9 @@ def save(filepath,arr,clobber='false',logger=default_logger):
             pickle.dump(arr, open_file(filepath, 'w', compression),protocol=2)
             logger.info('wrote new pickle %s',filepath)
 
+    else:
+        raise Exception('unknown file format %s' % filepath.split('.')[-1])
+
 
 def load(filepath,remember=False,dtype=None,hdu=None,logger=default_logger,skiprows=0):
 

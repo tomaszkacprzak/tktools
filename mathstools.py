@@ -114,6 +114,11 @@ def get_normalisation(log_post):
     return prob_post , log_post , prob_norm , log_norm
 
 def normalise(log_post):
+    """
+    @brief normalise the log probability
+    @param log_post log probability, can be multidimensional
+    @return returns the normalised probability (not log)
+    """
 
     interm_norm = max(log_post.flatten())
     log_post_use = log_post - interm_norm
@@ -195,7 +200,6 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
     import scipy
     import scipy.interpolate
 
-
     # upsample PDF
     n_upsample = 10000
     f = scipy.interpolate.interp1d(par_orig,pdf_orig)
@@ -220,8 +224,8 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
     ix = diff.argsort()
     par_lo = par[ix]
     par_hi = par[ix]
-    sig_point_lo = par_lo[par_lo<max_par][0]
-    sig_point_hi = par_hi[par_hi>max_par][0]
+    sig_point_lo = par_lo[par_lo<=max_par][0]
+    sig_point_hi = par_hi[par_hi>=max_par][0]
     err_hi = sig_point_hi - max_par
     err_lo = max_par - sig_point_lo 
     # if both are on the same side
@@ -231,6 +235,11 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
         err_lo = err_hi
         # more options should be implemented here when needed
         warnings.warn('err_lo=err_hi')
+
+    if (err_lo < 1e10):
+
+        err_lo = err_hi
+        warnings.warn('very small err_lo, something is wrong, setting to err_lo to err_hi')        
 
     if plot:
         pl.plot(par,pdf,'x-')
