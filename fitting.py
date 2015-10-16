@@ -99,11 +99,20 @@ def fit_positive(x,y,s="none",expand=linearBasis,empirical_errors=False,unit_box
     X=expand(x)
     n_dims_X=X.shape[1]
 
+    # print 'fitting positive'
     w = cvxpy.Variable(n_dims_X)
     objective = cvxpy.Minimize(cvxpy.sum_squares(X*w - y))
     constraints = [0 <= w]
     prob = cvxpy.Problem(objective, constraints)
     result = prob.solve()
+
+    if not np.isfinite(result):
+        # print 'fitting negative'
+        w = cvxpy.Variable(n_dims_X)
+        objective = cvxpy.Minimize(cvxpy.sum_squares(X*w - y))
+        # constraints = [0 >= w]
+        prob = cvxpy.Problem(objective)
+        result = prob.solve()
 
     # ys=y/s
     # Xs=X/kron(ones((n_dims_X,1)),s).T
@@ -134,6 +143,8 @@ def fit_positive(x,y,s="none",expand=linearBasis,empirical_errors=False,unit_box
 
     #     #pdb.set_trace()
 
+    if w.value==None:
+        import pdb; pdb.set_trace()
 
     return np.array(w.value)
 
