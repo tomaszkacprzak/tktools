@@ -75,7 +75,6 @@ def save(filepath,arr,clobber='false',logger=default_logger):
     if clobber==True: clobber='true'
 
 
-    import pyfits
     if (filepath.split('.')[-1] in fits_formats) or (filepath.split('.')[-2] in fits_formats):
         import pyfits, warnings, os
         with warnings.catch_warnings():
