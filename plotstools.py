@@ -3,14 +3,48 @@ import logging, sys, mathstools
 import matplotlib.pyplot as pl
 import numpy as np
 
-default_log = logging.getLogger("plotstools") 
-default_log.setLevel(logging.INFO)  
+default_log = logging.getLogger("plotstools")
+default_log.setLevel(logging.INFO)
 log_formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s   %(message)s ","%Y-%m-%d %H:%M:%S")
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
 default_log.addHandler(stream_handler)
 default_log.propagate = False
 log = default_log
+
+def planck(ncolors=256):
+    from matplotlib.colors import LinearSegmentedColormap as cm
+    """
+        Returns a color map similar to the one used for the "Planck CMB Map".
+        Parameters
+        ----------
+        ncolors : int, *optional*
+            Number of color segments (default: 256).
+        Returns
+        -------
+        cmap : matplotlib.colors.LinearSegmentedColormap instance
+            Linear segmented color map.
+    """
+    segmentdata = {"red":   [(0.0, 0.00, 0.00), (0.1, 0.00, 0.00),
+                             (0.2, 0.00, 0.00), (0.3, 0.00, 0.00),
+                             (0.4, 0.00, 0.00), (0.5, 1.00, 1.00),
+                             (0.6, 1.00, 1.00), (0.7, 1.00, 1.00),
+                             (0.8, 0.83, 0.83), (0.9, 0.67, 0.67),
+                             (1.0, 0.50, 0.50)],
+                   "green": [(0.0, 0.00, 0.00), (0.1, 0.00, 0.00),
+                             (0.2, 0.00, 0.00), (0.3, 0.30, 0.30),
+                             (0.4, 0.70, 0.70), (0.5, 1.00, 1.00),
+                             (0.6, 0.70, 0.70), (0.7, 0.30, 0.30),
+                             (0.8, 0.00, 0.00), (0.9, 0.00, 0.00),
+                             (1.0, 0.00, 0.00)],
+                   "blue":  [(0.0, 0.50, 0.50), (0.1, 0.67, 0.67),
+                             (0.2, 0.83, 0.83), (0.3, 1.00, 1.00),
+                             (0.4, 1.00, 1.00), (0.5, 1.00, 1.00),
+                             (0.6, 0.00, 0.00), (0.7, 0.00, 0.00),
+                             (0.8, 0.00, 0.00), (0.9, 0.00, 0.00),
+                             (1.0, 0.00, 0.00)]}
+
+    return cm("Planck-like", segmentdata, N=int(ncolors), gamma=1.0)
 
 def plot_radec(ra,dec,lat0=0,lon0=0,**kwargs):
 
@@ -21,16 +55,16 @@ def plot_radec(ra,dec,lat0=0,lon0=0,**kwargs):
     bmap.drawmeridians(np.arange(0.,420.,60.))
     bmap.drawmapboundary()
     x1,y1 = bmap(ra,dec)
-    bmap.scatter(x1,y1,**kwargs) 
+    bmap.scatter(x1,y1,**kwargs)
 
     return x1,y1
- 
+
 
 def imshow_grid( grid_x, grid_y, values_c , nx=None , ny=None):
     """
     @brief Create an image from values on a grid.
-    @param values_c values of the image, will be turned into intensity of image. 
-                    It has to be in a Nx1 vector, where N=nx*ny, 
+    @param values_c values of the image, will be turned into intensity of image.
+                    It has to be in a Nx1 vector, where N=nx*ny,
                     where nx and ny are number of grid points in x and y direction.
     @param grid_x - grid of points
     """
@@ -91,14 +125,14 @@ def get_bins_centers(bins_edges,constant_spacing=True):
     else:
 
         for be in range(len(bins_edges)-1):
-            bins_centers[be] = np.mean([bins_edges[be],bins_edges[be+1]])      
+            bins_centers[be] = np.mean([bins_edges[be],bins_edges[be+1]])
 
     # print len(bins_centers)
     return bins_centers
 
 def get_bins_edges(bins_centers,constant_spacing=True):
 
-    
+
     if constant_spacing:
         bins_centers = np.array(bins_centers)
         dx = bins_centers[1] - bins_centers[0]
@@ -119,7 +153,7 @@ def get_bins_edges(bins_centers,constant_spacing=True):
 
         bins_edges[0] =  (bins_centers[1] + bins_centers[0])/2.  - scipy.interpolate.splev(-1,spline_rep)
         bins_edges[-1] =  (bins_centers[-2] + bins_centers[-1])/2. + scipy.interpolate.splev(len(bins_size)+1,spline_rep)
-        
+
         # pl.figure()
         # pl.plot(range(len(bins_size)), bins_size , 'x-')
         # pl.plot(range(-1,len(bins_size)), scipy.interpolate.splev(range(-1,len(bins_size)),spline_rep) , 'o-')
@@ -131,8 +165,8 @@ def get_bins_edges(bins_centers,constant_spacing=True):
 
 
         for be in range(1,len(bins_centers)):
-            # size of first element is 
-            bins_edges[be] = np.mean([bins_centers[be-1],bins_centers[be]])      
+            # size of first element is
+            bins_edges[be] = np.mean([bins_centers[be-1],bins_centers[be]])
 
         # pl.figure()
         # pl.plot(bins_edges,  np.ones_like(bins_edges),'x-',label='edges')
@@ -162,12 +196,12 @@ def adjust_limits(x_offset_min=0.1,x_offset_max=0.1,y_offset_min=0.1,y_offset_ma
     xlim = pl.xlim()
     add_xlim_min = x_offset_min*np.abs(max(xlim) - min(xlim))
     add_xlim_max = x_offset_max*np.abs(max(xlim) - min(xlim))
-    pl.xlim( [min(xlim) - add_xlim_min, max(xlim) + add_xlim_max] ) 
+    pl.xlim( [min(xlim) - add_xlim_min, max(xlim) + add_xlim_max] )
 
     ylim = pl.ylim()
     add_ylim_min = y_offset_min*np.abs(max(ylim) - min(ylim))
     add_ylim_max = y_offset_max*np.abs(max(ylim) - min(ylim))
-    pl.ylim( [min(ylim) - add_ylim_min, max(ylim) + add_ylim_max] ) 
+    pl.ylim( [min(ylim) - add_ylim_min, max(ylim) + add_ylim_max] )
 
 def get_colorscale(n_colors, cmap_name='jet'):
 
@@ -175,15 +209,15 @@ def get_colorscale(n_colors, cmap_name='jet'):
     # HSV_tuples = [(x*1.0/n_colors, 0.75, 0.75) for x in range(n_colors)]
     # RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
 
-    import numpy as np 
-    import matplotlib.cm as cm 
-    cmap = cm.get_cmap(cmap_name, n_colors) 
-    return cmap(np.arange(n_colors)) 
+    import numpy as np
+    import matplotlib.cm as cm
+    cmap = cm.get_cmap(cmap_name, n_colors)
+    return cmap(np.arange(n_colors))
 
     # return RGB_tuples
 
 def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, contour2):
-  
+
     N = len(x)
     x_axis = np.linspace(xmin, xmax, n+1)
     y_axis = np.linspace(ymin, ymax, n+1)
@@ -204,8 +238,8 @@ def get_contours_corrected(like, x, y, n, xmin, xmax, ymin, ymax, contour1, cont
 class multi_dim_dist():
 
     def __init__(self):
-    
-        self.n_upsample = 0    
+
+        self.n_upsample = 0
         self.n_contours = 20
         self.y_offset_min = 0
         self.x_offset_max = 0
@@ -245,10 +279,10 @@ class multi_dim_dist():
         from scipy.stats import kde
 
         data = np.concatenate([x[:,None],y[:,None]],axis=1)
-        # k = kde.gaussian_kde(data.T,bw_method='silverman') 
-        k = kde.gaussian_kde(data.T) 
+        # k = kde.gaussian_kde(data.T,bw_method='silverman')
+        k = kde.gaussian_kde(data.T)
 
-        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
+        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)
 
         xi, yi = np.meshgrid( grid_x , grid_y )
         z = k(np.vstack([xi.flatten(), yi.flatten()]))
@@ -270,21 +304,21 @@ class multi_dim_dist():
 
         # pl.hist2d(x,y,bins=[bins_x,bins_y])
         # pl.imshow(like)
-        
+
         # kde = KDE([x,y])
         # (x_axis,y_axis), like = kde.grid_evaluate(npix, [(min(x),max(x)),(min(y),max(y))] )
         # pl.imshow(like,extent=(min(x),max(x_axis),min(y_axis),max(y_axis)),interpolation='nearest')
         # pl.axis('tight')
 
         xi,yi,zi=self.kde_grid(x,y,bins_x,bins_y)
-        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)    
+        grid_x,grid_y,n_grid_x,n_grid_y = self.get_grids(x,y,bins_x,bins_y)
 
         n_contours = min([n_grid_y,n_grid_x]) / 3
         log.debug('n_contours = %d' % n_contours)
         n_contours = self.n_contours
 
         contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(zi)
-      
+
         if self.colormesh:
             pl.pcolormesh(xi, yi, zi)
             # pl.pcolormesh(xi, yi, zi , cmap=pl.cm.YlOrBr)
@@ -311,17 +345,17 @@ class multi_dim_dist():
 
         if bins=='def':
             bins = [100]*n_dims
-        
+
         iall=0
         for ip in range(n_dims):
 
             isub = ip*n_dims + ip + 1
             iall += 1
             log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
-            pl.subplot(n_dims,n_dims,isub)       
+            pl.subplot(n_dims,n_dims,isub)
             hist_levels, hist_bins , _ = pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color)
             pl.ylim([0,  max(hist_levels)*1.1 ])
-           
+
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
             pl.xticks(xticks) ; pl.yticks(yticks)
@@ -329,7 +363,7 @@ class multi_dim_dist():
                 pl.xticks(xticks,[])
             if iall==1:
                 pl.ylabel(labels[ip])
-            
+
             # panels in the middle
             # if (( isub % n_dims) != 1) and (isub <= n_dims*(n_dims-1) ):
             #     pl.yticks=[]
@@ -384,9 +418,9 @@ class multi_dim_dist():
     def plot_dist_grid(self,X,y,labels='def'):
 
         n_points, n_dims = X.shape
-        
+
         list_prob_marg, list_params_marg = mathstools.get_marginals(X,y)
-        list_prob_marg_2d, list_params_marg_2d = mathstools.get_marginals_2d(X,y)   
+        list_prob_marg_2d, list_params_marg_2d = mathstools.get_marginals_2d(X,y)
 
         if labels=='def':
             labels = ['param %d ' % ind for ind in range(n_dims)]
@@ -397,11 +431,11 @@ class multi_dim_dist():
             isub = ip*n_dims + ip + 1
             iall += 1
             log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
-            pl.subplot(n_dims,n_dims,isub)       
+            pl.subplot(n_dims,n_dims,isub)
 
             # pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
             # bar_data_x,bar_data_y = get_plot_bar_data(list_params_marg[ip] , list_prob_marg[ip] )
-            # pl.plot(bar_data_x,bar_data_y)           
+            # pl.plot(bar_data_x,bar_data_y)
             pl.plot(list_params_marg[ip] , list_prob_marg[ip] , 'x-')
             xticks=list(pl.xticks()[0]); del(xticks[0]); del(xticks[-1])
             yticks=list(pl.yticks()[0]); del(yticks[0]); del(yticks[-1])
@@ -438,16 +472,16 @@ class multi_dim_dist():
                 yi = list_params_marg_2d[ip][ic][1]
                 Xi, Yi = np.meshgrid(xi, yi)
                 Zi = list_prob_marg_2d[ip][ic].T
-                
+
                 # pl.pcolormesh(Xi, Yi, Zi)
                 # dx=list_params_marg[ip][ic][0][1]-list_params_marg[ip][ic][0][0]
                 # dy=list_params_marg[ip][ic][1][1]-list_params_marg[ip][ic][1][0]
-                # pl.imshow(list_prob_marg_2d[ip][ic].T,extent=[ min(list_params_marg_2d[ip][ic][0])-dx/2. , 
-                #                                                 max(list_params_marg_2d[ip][ic][0])+dx/2. , 
-                #                                                 min(list_params_marg_2d[ip][ic][1])+dy/2. , 
-                #                                                 max(list_params_marg_2d[ip][ic][1])+dy/2. ] , 
+                # pl.imshow(list_prob_marg_2d[ip][ic].T,extent=[ min(list_params_marg_2d[ip][ic][0])-dx/2. ,
+                #                                                 max(list_params_marg_2d[ip][ic][0])+dx/2. ,
+                #                                                 min(list_params_marg_2d[ip][ic][1])+dy/2. ,
+                #                                                 max(list_params_marg_2d[ip][ic][1])+dy/2. ] ,
                 #                                                 aspect='auto')
-                pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues 
+                pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues
 
                 # elif self.arr_plot_method == 'contourf':
 
@@ -496,7 +530,7 @@ class multi_dim_dist():
         checked_all = False
         while checked_all == False:
             for di in range(len(X)):
-                if y.shape[di]==1:          
+                if y.shape[di]==1:
                     y = np.squeeze(y,di)
                     X.pop(di)
                     for pi in range(len(X)):
@@ -519,7 +553,7 @@ class multi_dim_dist():
         list_params_marg_2d = mathstools.empty_lists(n_dims,n_dims)
         list_prob_marg = [None]*n_dims
         list_params_marg = [None]*n_dims
-           
+
         for dim in range(n_dims):
             sum_axis = range(n_dims)
             sum_axis.remove(dim)
@@ -541,7 +575,7 @@ class multi_dim_dist():
                 params_marg1 = np.sum(X[dim1],axis=tuple(sum_axis))/ np.prod(shape_list[sum_axis])
                 params_marg2 = np.sum(X[dim2],axis=tuple(sum_axis))/ np.prod(shape_list[sum_axis])
                 list_prob_marg_2d[dim1][dim2] = prob_marg
-                list_params_marg_2d[dim1][dim2] = (params_marg1,params_marg2) 
+                list_params_marg_2d[dim1][dim2] = (params_marg1,params_marg2)
 
         iall=0
         for ip in range(n_dims):
@@ -549,11 +583,11 @@ class multi_dim_dist():
             isub = ip*n_dims + ip + 1
             iall += 1
             log.debug( 'panel %d ip %d ic %d isub %d' % (iall,ip,ip,isub) )
-            pl.subplot(n_dims,n_dims,isub)       
+            pl.subplot(n_dims,n_dims,isub)
 
             # pl.hist(X[:,ip],bins=bins[ip],histtype='step',normed=True,color=self.color_step)
             # bar_data_x,bar_data_y = get_plot_bar_data(list_params_marg[ip] , list_prob_marg[ip] )
-            # pl.plot(bar_data_x,bar_data_y)           
+            # pl.plot(bar_data_x,bar_data_y)
             x=list_params_marg[ip]
             y=list_prob_marg[ip]
             pl.plot( x, y , 'x-')
@@ -606,15 +640,15 @@ class multi_dim_dist():
                 #     Xi = Xi_hires
                 #     Yi = Yi_hires
 
-                    
+
                 if self.contourf:
-                    pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues 
+                    pl.contourf(Xi, Yi, Zi , self.n_contours) ; #cmap=pl.cm.Blues
                 if self.colormesh:
                     pl.pcolormesh(Xi, Yi, Zi)
                 if self.contour:
                     contour_levels , contour_sigmas = mathstools.get_sigma_contours_levels(Zi)
                     cp = pl.contour(Xi , Yi, Zi,levels=contour_levels,colors='m')
-                pl.axis('tight')    
+                pl.axis('tight')
 
 
 
@@ -734,7 +768,7 @@ class multi_dim_dist():
 
 
 def get_plot_bar_data(x,y):
-           
+
     x = np.ravel(zip(x,x+1)) - (x[1]-x[0])/2.
     y = np.ravel(zip(y,y))
 
@@ -791,5 +825,5 @@ if __name__ == '__main__':
 
 
 
-            
+
 

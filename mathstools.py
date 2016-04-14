@@ -3,8 +3,8 @@ import pylab as pl
 import numpy as np
 
 
-default_log = logging.getLogger("mathstools") 
-default_log.setLevel(logging.INFO)  
+default_log = logging.getLogger("mathstools")
+default_log.setLevel(logging.INFO)
 log_formatter = logging.Formatter("%(asctime)s %(name)s %(levelname)s   %(message)s ","%Y-%m-%d %H:%M:%S")
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(log_formatter)
@@ -78,7 +78,7 @@ def get_bin_membership_matrix(x,bin_edges):
 
     digitized = np.array(np.digitize(x,bins=bin_edges)) -1
     M = np.zeros([len(x),len(bin_edges)-1])
-    # for i in range(len(digitized)): 
+    # for i in range(len(digitized)):
     #     M[i,digitized[i]]=1
     #     if i % 1000 == 0 : print i, print len(digitized)
     M[range(len(x)),digitized]=1
@@ -95,7 +95,7 @@ def get_func_split(grid,func,n_split_by=100):
         i1 = i
         i2 = i1 + n_split_by
         if i2 > n_grid: i2 = n_grid
-        
+
         dens[i1:i2] = func(grid[i1:i2])
         log.debug('part from %d to %d',i1,i2)
 
@@ -110,7 +110,7 @@ def get_normalisation(log_post):
     prob_post = prob_post / prob_norm
     log_post  = np.log(prob_post)
     log_norm = np.log(prob_norm) + interm_norm
-       
+
     return prob_post , log_post , prob_norm , log_norm
 
 def normalise(log_post):
@@ -125,7 +125,7 @@ def normalise(log_post):
     prob_post = np.exp(log_post_use)
     prob_norm = np.sum(prob_post)
     prob_post = prob_post / prob_norm
-      
+
     return prob_post
 
 def get_marginals(X,y):
@@ -144,7 +144,7 @@ def get_marginals(X,y):
         n_uniques = len(uniques)
         marg = np.zeros(n_uniques)
         log.debug('param %d found %d unique values' % (dim,n_uniques))
-        
+
         # check if sorted
         for iu, vu in enumerate(uniques):
             select = inverse == iu
@@ -172,7 +172,7 @@ def get_marginals_2d(X,y):
 
     for dim1 in range(n_dim):
         for dim2 in range(n_dim):
-            
+
             uniques1, inverse1 = np.unique(X[:,dim1],return_inverse=True)
             uniques2, inverse2 = np.unique(X[:,dim2],return_inverse=True)
             n_uniques1 = len(uniques1)
@@ -180,7 +180,7 @@ def get_marginals_2d(X,y):
             marg = np.zeros([n_uniques1,n_uniques2])
 
             log.debug('marginals_2d: params %d %d found %d %d unique values' % (dim1,dim2,n_uniques1,n_uniques2))
-       
+
             # check if sorted
             ia=0
             for ip1,vp1 in enumerate(uniques1):
@@ -188,22 +188,25 @@ def get_marginals_2d(X,y):
                     select = (inverse1 == ip1) * (inverse2 == ip2)
                     marg[ip1,ip2] = sum(y[select])
                     ia += 1
-                    
+
             list_margs[dim1][dim2] = marg
-            list_params[dim1][dim2] = (uniques1,uniques2) 
+            list_params[dim1][dim2] = (uniques1,uniques2)
 
     return list_margs, list_params
 
 
 
-def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
+def estimate_confidence_interval(par_orig, pdf_orig, plot=False):
     import scipy
     import scipy.interpolate
 
+    pdf_orig = pdf_orig.copy()
+    pdf_orig /= np.sum(pdf_orig)
+
     # upsample PDF
     n_upsample = 10000
-    f = scipy.interpolate.interp1d(par_orig,pdf_orig)
-    par = np.linspace(min(par_orig),max(par_orig),n_upsample) 
+    f = scipy.interpolate.interp1d(par_orig, pdf_orig, kind='cubic')
+    par = np.linspace(min(par_orig),max(par_orig),n_upsample)
     pdf = f(par)
 
     sig = 1
@@ -217,7 +220,7 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
 
     max_par = par[pdf.argmax()]
 
-    list_levels , _ = get_sigma_contours_levels(pdf,list_sigmas=[1])
+    list_levels , _ = get_sigma_contours_levels(pdf, list_sigmas=[1])
     sig1_level = list_levels[0]
 
     diff = abs(pdf-sig1_level)
@@ -227,7 +230,7 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
     sig_point_lo = par_lo[par_lo<=max_par][0]
     sig_point_hi = par_hi[par_hi>=max_par][0]
     err_hi = sig_point_hi - max_par
-    err_lo = max_par - sig_point_lo 
+    err_lo = max_par - sig_point_lo
     # if both are on the same side
     if (err_hi > 0) and (err_lo < 0):
 
@@ -236,13 +239,10 @@ def estimate_confidence_interval(par_orig,pdf_orig,plot=False):
         # more options should be implemented here when needed
         warnings.warn('err_lo=err_hi')
 
-    if (err_lo < 1e10):
-
-        err_lo = err_hi
-        warnings.warn('very small err_lo, something is wrong, setting to err_lo to err_hi')        
 
     if plot:
-        pl.plot(par,pdf,'x-')
+        pl.plot(par_orig, pdf_orig, '.')
+        pl.plot(par, pdf,'-')
         pl.axvline(x=max_par,linewidth=1, color='c')
         pl.axvline(x=max_par - err_lo,linewidth=1, color='r')
         pl.axvline(x=max_par + err_hi,linewidth=1, color='r')
@@ -260,7 +260,7 @@ def estimate_confidence_interval_reflect(par_orig,pdf_orig,plot=False):
     # upsample PDF
     n_upsample = 10000
     f = scipy.interpolate.interp1d(par_orig,pdf_orig)
-    par = np.linspace(min(par_orig),max(par_orig),n_upsample) 
+    par = np.linspace(min(par_orig),max(par_orig),n_upsample)
     pdf = f(par)
     pdf /= np.sum(pdf)
 
@@ -281,20 +281,20 @@ def estimate_confidence_interval_reflect(par_orig,pdf_orig,plot=False):
     par_hi = par[pdf.argmax():] - par[pdf.argmax()]
     par_hi = np.concatenate([ -par_hi[::-1], par_hi ])
     pdf_hi /= np.sum(pdf_hi)
-    
+
     # lower errorbar
     pdf_lo = pdf[:pdf.argmax()]
     pdf_lo = np.concatenate([pdf_lo,pdf_lo[::-1]])
     par_lo = par[:pdf.argmax()]
     par_lo = np.concatenate([ -par_lo[::-1], par_lo ])
     pdf_lo /= np.sum(pdf_lo)
-    
+
     list_levels , _ = get_sigma_contours_levels(pdf_hi,list_sigmas=[1])
     sig1_level = list_levels[0]
     diff = abs(pdf_hi-sig1_level)
     ix = diff.argmin()
     err_hi = np.abs(par_hi[ix])
-    
+
     list_levels , _ = get_sigma_contours_levels(pdf_lo,list_sigmas=[1])
     sig1_level = list_levels[0]
     diff = abs(pdf_lo-sig1_level)
@@ -302,13 +302,13 @@ def estimate_confidence_interval_reflect(par_orig,pdf_orig,plot=False):
     err_lo = np.abs(par_lo[ix])
 
 
-    
+
     if plot:
-        pl.figure(); 
-        pl.plot(par_lo,pdf_lo); 
+        pl.figure();
+        pl.plot(par_lo,pdf_lo);
         pl.axvline(err_lo)
         pl.axvline(-err_lo)
-        
+
         pl.figure();
         pl.plot(par_hi,pdf_hi);
         pl.axvline(err_hi)
@@ -336,7 +336,7 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
     grid_prob_hires = np.linspace(min_pdf,max_pdf,n_grid_prob*1e5)
     log.debug('confidence interval grid dx %1.4e' , grid_prob_hires[1]-grid_prob_hires[0])
 
-    list_levels = [] 
+    list_levels = []
     diff = np.zeros(len(grid_prob))
     # pl.figure()
     for sig in list_sigmas:
@@ -345,14 +345,14 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
 
         log.debug('confindence %d sigmas %5.5f', sig, confidence_level)
         for il, lvl in enumerate(grid_prob):
-            mass = sum(pdf[pdf > lvl]) 
-            diff[il] = np.abs(mass) 
+            mass = sum(pdf[pdf > lvl])
+            diff[il] = np.abs(mass)
             # log.debug('diff %5.5f mass=%5.5f lvl=%5.5f at %5.2f' , diff[il], mass,lvl,float(il)/float(n_grid_prob))
 
         import scipy.interpolate
-        f_interp=scipy.interpolate.interp1d(grid_prob,diff,'cubic')
+        f_interp=scipy.interpolate.interp1d(grid_prob, diff, 'cubic')
         diff_hires=np.abs(f_interp(grid_prob_hires))
-       
+
         ib = np.abs(diff_hires - confidence_level).argmin()
         vb = grid_prob_hires[ib]
         list_levels.append(vb)
@@ -360,7 +360,7 @@ def get_sigma_contours_levels(pdf,list_sigmas=[1,2,3]):
         # pl.plot(grid_prob,diff,'rx')
         # pl.plot(grid_prob_hires,diff_hires,'b')
         # pl.axvline(grid_prob_hires[ib])
-        
+
         log.debug('confindence %2.2f sigmas %5.5e level %5.5e/%5.5e', sig, confidence_level, vb,max_pdf)
 
     # pl.show()
@@ -380,12 +380,12 @@ def get_kl_divergence_from_samples(samples_p,samples_q,n_neighbor=10):
     if m!=n:
         raise Exception('m!=n unsupported')
 
-    ball_tree_p = BallTree(samples_p, leaf_size=5)        
-    ball_tree_q = BallTree(samples_q, leaf_size=5)        
+    ball_tree_p = BallTree(samples_p, leaf_size=5)
+    ball_tree_q = BallTree(samples_q, leaf_size=5)
     log.info('querying ball 1')
-    rho, rho_ind = ball_tree_p.query(samples_p, k=n_neighbor+1)        
+    rho, rho_ind = ball_tree_p.query(samples_p, k=n_neighbor+1)
     log.info('querying ball 2')
-    nu, nu_ind   = ball_tree_q.query(samples_p, k=n_neighbor+1)        
+    nu, nu_ind   = ball_tree_q.query(samples_p, k=n_neighbor+1)
 
     vec = nu[:,n_neighbor] / rho[:,n_neighbor]
     vec = vec[~np.isnan(vec)]
@@ -501,20 +501,20 @@ def get_2D_fwhm(lores_img,n_angles=64):
     # s_upsampled_pixel = float(n_box)*2./n_sub
     grid_edges = np.linspace(-s_box/2.,s_box/2.,float(n_box)/float(n_sub)*4)
     grid_centers = plotstools.get_bins_centers(grid_edges)
-    
+
     colors=plotstools.get_colorscale(len(angles))
     h=np.zeros([len(grid_centers),len(angles)])
     # pl.figure(100)
     for ia,ang in enumerate(angles):
 
-        # select close pixel -- 
+        # select close pixel --
         select = (np.abs(r[:,ia]) < s_pix) * (np.abs(p[:,ia]) < s_box)
 
         #for angle measurement, select all pixels in box
         # select = (np.abs(r[:,ia]) < s_box) * (np.abs(p[:,ia]) < s_box)
 
         # pl.figure()
-        # pl.scatter(x[:,0],x[:,1],c='y'); 
+        # pl.scatter(x[:,0],x[:,1],c='y');
         # pl.scatter(x[select,0],x[select,1]);
         # pl.axis('equal')
         # pl.show()

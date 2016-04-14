@@ -17,7 +17,7 @@ def get_colorscale(n_colors, cmap_name='jet'):
     cmap = cm.get_cmap(cmap_name, n_colors)
     return cmap(np.arange(n_colors))
 
-def scatter_density(points1,points2,s=10,n_bins=50,lim1=None,lim2=None,**kwargs):
+def scatter_density(points1,points2,n_bins=50,lim1=None,lim2=None,**kwargs):
 
     import numpy as np
     import pylab as pl
@@ -49,9 +49,42 @@ def scatter_density(points1,points2,s=10,n_bins=50,lim1=None,lim2=None,**kwargs)
     xi = np.concatenate([points1[:,np.newaxis],points2[:,np.newaxis]],axis=1)
     c = griddata(points,hv.flatten(),xi,method='linear',rescale=True)
 
-    pl.scatter(points1,points2,lw=0,s=s,c=c,**kwargs)
+    pl.scatter(points1,points2,c=c,**kwargs)
 
 
 
 
 
+def planck_cmap(ncolors=256):
+    from matplotlib.colors import LinearSegmentedColormap as cm
+    """
+        Returns a color map similar to the one used for the "Planck CMB Map".
+        Parameters
+        ----------
+        ncolors : int, *optional*
+            Number of color segments (default: 256).
+        Returns
+        -------
+        cmap : matplotlib.colors.LinearSegmentedColormap instance
+            Linear segmented color map.
+    """
+    segmentdata = {"red":   [(0.0, 0.00, 0.00), (0.1, 0.00, 0.00),
+                             (0.2, 0.00, 0.00), (0.3, 0.00, 0.00),
+                             (0.4, 0.00, 0.00), (0.5, 1.00, 1.00),
+                             (0.6, 1.00, 1.00), (0.7, 1.00, 1.00),
+                             (0.8, 0.83, 0.83), (0.9, 0.67, 0.67),
+                             (1.0, 0.50, 0.50)],
+                   "green": [(0.0, 0.00, 0.00), (0.1, 0.00, 0.00),
+                             (0.2, 0.00, 0.00), (0.3, 0.30, 0.30),
+                             (0.4, 0.70, 0.70), (0.5, 1.00, 1.00),
+                             (0.6, 0.70, 0.70), (0.7, 0.30, 0.30),
+                             (0.8, 0.00, 0.00), (0.9, 0.00, 0.00),
+                             (1.0, 0.00, 0.00)],
+                   "blue":  [(0.0, 0.50, 0.50), (0.1, 0.67, 0.67),
+                             (0.2, 0.83, 0.83), (0.3, 1.00, 1.00),
+                             (0.4, 1.00, 1.00), (0.5, 1.00, 1.00),
+                             (0.6, 0.00, 0.00), (0.7, 0.00, 0.00),
+                             (0.8, 0.00, 0.00), (0.9, 0.00, 0.00),
+                             (1.0, 0.00, 0.00)]}
+
+    return cm("Planck-like", segmentdata, N=int(ncolors), gamma=1.0)
